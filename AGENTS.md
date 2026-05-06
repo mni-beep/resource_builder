@@ -21,6 +21,7 @@ Ask the following questions. The questions you ask **branch based on Question 1*
 What kind of document is this?
 - [ ] **Single worksheet** (1–2 pages, theory + questions only)
 - [ ] **Multi-lesson booklet** (several lessons with cover page, contents, references)
+- [ ] **Multi-lesson booklet + paired teacher edition** (student booklet + separate answer key with teaching notes)
 - [ ] **Week-by-week unit guide** (teacher planning document — curriculum map table with columns for Week, Topic, Content, Activities, Resources, Assessment, Inclusion)
 - [ ] **Assessment / exam** (questions only, possibly with separate marking key)
 - [ ] **Lab / practical manual** (procedures + report templates)
@@ -56,7 +57,13 @@ What kind of document is this?
 - Total number of lessons: ___________ (calculated: weeks × lessons/week)
 - Should it have a cover page? [ ] Yes  [ ] No
 - Should it have a contents page? [ ] Yes  [ ] No
+- Should it have a "How to Use This Workbook" page? [ ] Yes  [ ] No
 - Should it have a reference section (glossary, formula sheet, cheat sheet)? [ ] Yes  [ ] No
+
+**For booklet + teacher edition (if Question 1 selected that option):**
+- Should the teacher edition include a "How to Teach" guide (pacing, common misconceptions, marking approach)? [ ] Yes  [ ] No
+- Should each question include marking criteria with point breakdowns? [ ] Yes  [ ] No
+- Teacher edition output filename: ___________
 
 **For unit guide / curriculum map tables:**
 - What columns should the table have? (Default: Week | Topic | Content | Activities | Resources & Experiments | Assessment & Homework | Disability Inclusion Adjustment)
@@ -216,6 +223,8 @@ content/
 ```
 
 Numbers don't need to be consecutive — leave gaps so sections can be inserted later.
+
+**If building a teacher edition as well**, create a second subfolder (e.g. `your-resource-name-teacher/`). The teacher edition is built by running `build.js` a second time with a different `resource.config.json` pointing at the teacher folder. Teacher content modules use answer boxes (green), teaching notes (amber), and marking criteria — see `DOCX_BUILDER_REFERENCE.md` Section 9.
 
 Set `contentDir` in `resource.config.json` to point at this subfolder:
 ```json

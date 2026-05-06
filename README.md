@@ -12,6 +12,7 @@ Describe what you want, answer a few questions, and this tool produces a print-r
 |---|---|
 | **Single worksheet** | "Photosynthesis: Light & Dark Reactions" — 2 pages, theory + 5 MC + 3 short answer |
 | **Multi-week booklet** | "Year 10 Electronics & Arduino" — 6 weeks × 4 lessons, cover page, contents, glossary |
+| **Booklet + teacher edition** | Student booklet + separate answer key with teaching notes, marking criteria, and pedagogical guidance |
 | **Unit guide / curriculum map** | "Year 9 Electricity" — landscape table with 7 columns: Week, Topic, Content, Activities, Resources, Assessment, Inclusion |
 | **Assessment / exam** | "Semester 1 Physics Exam" — student paper + separate marking key |
 | **Lab / practical manual** | "Chemistry Lab Manual" — procedures, report templates, scaffolded analysis |
@@ -46,6 +47,8 @@ Describe what you want, answer a few questions, and this tool produces a print-r
 - **Callout boxes** — key concepts, learning objectives, critical rules, safety warnings, checklists
 - **Worked example boxes** — bordered green boxes with step-by-step solutions
 - **Hint boxes** — italic grey prompts directing students to exact answer locations
+- **Answer boxes** — green left-border boxes with "✓ ANSWER" for teacher editions
+- **Teaching note boxes** — amber left-border boxes with "⚠ TEACHING NOTE" for pedagogical guidance
 - **Big display cells** — thick-bordered highlight boxes for key facts
 
 ### Diagrams & Images

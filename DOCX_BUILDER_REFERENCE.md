@@ -29,11 +29,11 @@ Every content module exports `function(C, H) → array`. Use `C.*` for all forma
 5. [H — Local Helpers (defined in build script)](#5-h--local-helpers-defined-in-build-script)
 6. [Document Assembly](#6-document-assembly)
 7. [Content Module Template](#7-content-module-template)
-8. [Scaffolding Patterns Catalogue](#8-scaffolding-patterns-catalogue)
-9. [Practical-on-Paper Patterns](#9-practical-on-paper-patterns)
-10. [Colour & Sizing Conventions](#10-colour--sizing-conventions)
-11. [Building Different Resource Types](#11-building-different-resource-types)
-12. [Quick-Reference Cheat Sheet](#12-quick-reference-cheat-sheet)
+10. [Scaffolding Patterns Catalogue](#10-scaffolding-patterns-catalogue)
+11. [Practical-on-Paper Patterns](#11-practical-on-paper-patterns)
+12. [Colour & Sizing Conventions](#12-colour--sizing-conventions)
+13. [Building Different Resource Types](#13-building-different-resource-types)
+14. [Quick-Reference Cheat Sheet](#14-quick-reference-cheat-sheet)
 
 ---
 
@@ -828,7 +828,382 @@ module.exports = function sectionN(C, H) {
 
 ---
 
-## 8. Scaffolding Patterns Catalogue
+## 8. Booklet Lesson Structure (Pedagogical Template)
+
+When building a heavily-scaffolded student booklet, each lesson follows this exact pedagogical sequence. This is the proven pattern from Claude's working booklets:
+
+### 8.1 Lesson Sequence (per lesson file)
+
+```
+1. LESSON BANNER          C.lessonBanner(N, "title", "subtitle")
+2. LEARNING OBJECTIVES    C.calloutBox("LEARNING OBJECTIVES", [...])
+3. THEORY                 C.h2() + C.h3() + C.p() + reference tables
+4. WORKED EXAMPLES        C.workedExample() × 2–3, including 1 "Now You Try"
+5. MULTIPLE CHOICE        Q1 easy with hint, Q2–Q6 ramping difficulty
+6. SHORT ANSWER           Sentence starters, fill-in tables, scaffolded steps
+7. EXTENDED RESPONSE      Planning steps → sentence starters → lined spaces
+8. PRACTICAL ON PAPER     Spot-the-break tables, sketch builds, checklists
+```
+
+### 8.2 Theory Section Pattern
+
+```js
+C.h2("N.1   Topic heading"),
+C.p("Body paragraph explaining the concept."),
+C.p("Additional explanation using plain language."),
+
+C.h3("Sub-topic"),
+C.p("More detail..."),
+
+// Optional: reference table using cellH/cellP
+new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2340, 2340, 2340, 2340],
+  rows: [
+    new TableRow({ tableHeader: true, children: [
+      cellH("Col1", 2340), cellH("Col2", 2340), ...
+    ]}),
+    // data rows with cellP()
+  ]
+}),
+
+// Optional: key concept callout box
+C.calloutBox("KEY CONCEPT", [
+  C.p("The important idea, stated clearly."),
+  C.bullet("Supporting detail in a bullet."),
+]),
+```
+
+### 8.3 Worked Examples Pattern
+
+Every lesson needs 2–3 worked examples. The first two are fully solved; the third is a "Now You Try" with hidden answers.
+
+**Full worked example:**
+```js
+C.workedExample("Descriptive Title", [
+  C.p("Question: state the problem clearly."),
+  C.p(""),
+  new Paragraph({ children: [
+    new TextRun({ text: "Step 1: Do this first.", bold: true, color: C.COLOURS.primary })
+  ], spacing: { before: 80, after: 60 } }),
+  C.bulletRich([
+    new TextRun({ text: "Key result: ", bold: true }),
+    new TextRun("the answer with explanation.")
+  ]),
+  // ... repeat for Step 2, Step 3 ...
+  new Paragraph({ children: [
+    new TextRun({ text: "Final answer: ", bold: true, color: C.COLOURS.primary }),
+    new TextRun("the result.")
+  ], spacing: { before: 100, after: 60 } }),
+]),
+```
+
+**"Now You Try" with hidden answer:**
+```js
+C.workedExample("✏️ Now You Try — Title", [
+  C.p("Question: try this similar problem on your own."),
+  new Paragraph({ children: [
+    new TextRun({ text: "💡 Hint: reminder of the key concept.", italics: true, color: "595959" })
+  ], spacing: { after: 120 }, indent: { left: 240 } }),
+  // Question parts with blanks
+  new Paragraph({ children: [
+    new TextRun({ text: "(a) ", bold: true }),
+    new TextRun({ text: "____________", bold: true })
+  ], spacing: { after: 80 }, indent: { left: 240 } }),
+  // Hidden answer (always spread with ...)
+  ...hiddenAnswer([
+    ["(a)", "The answer to part (a)"],
+    ["(b)", "The answer to part (b)"],
+  ])
+]),
+```
+
+### 8.4 Multiple Choice Pattern
+
+Q1 is deliberately easy — the answer is often stated in the theory on the same page. Use a hint box to point students to the exact location. Q2–Q6 ramp in difficulty.
+
+```js
+C.sectionTag("Multiple Choice Questions"),
+C.p("Circle the correct answer. The first questions are gentle warm-ups.", { italic: true, spacing: { after: 120 } }),
+
+// Q1: custom-built, extra-easy, with hint
+new Paragraph({ children: [
+  new TextRun({ text: "1. ", bold: true }),
+  new TextRun("Easy question stem...")
+], spacing: { before: 160, after: 80 } }),
+...["Option A.", "Option B.", "Option C.", "Option D."].map(opt =>
+  new Paragraph({ numbering: { reference: "mc-q1", level: 0 }, children: [new TextRun(opt)], spacing: { after: 40 } })
+),
+C.hintBox("Look at the callout box on page 1 of this lesson — the answer is on the first line."),
+
+// Q2–Q6: use the helper (ramping difficulty)
+...C.mcQuestion(2, "Question stem?", ["A","B","C","D"], "mc-q2"),
+...C.mcQuestion(3, "Harder question?", ["A","B","C","D"], "mc-q3"),
+// ...
+```
+
+### 8.5 Short Answer Pattern
+
+Mix of fill-in tables, sentence starters, and scaffolded calculation questions:
+
+```js
+C.sectionTag("Short Answer Questions"),
+C.p("Use the sentence starters and step-by-step prompts.", { italic: true }),
+
+// Fill-in table question
+new Paragraph({ children: [
+  new TextRun({ text: "7. ", bold: true }),
+  new TextRun("Fill in the table...")
+], spacing: { before: 160, after: 80 } }),
+C.hintBox("Look at the reference table on page 1 of this lesson."),
+// ... Table with cellP("____________________", w) for blanks ...
+
+// Sentence starter question
+new Paragraph({ children: [
+  new TextRun({ text: "8. ", bold: true }),
+  new TextRun("Define X in your own words.")
+], spacing: { before: 240, after: 80 } }),
+C.sentenceStarter("X is the __________________ that..."),
+...C.linedAnswerSpace(2),
+
+// Scaffolded calculation
+new Paragraph({ children: [
+  new TextRun({ text: "9. ", bold: true }),
+  new TextRun("Calculate... Show your working.")
+], spacing: { before: 200, after: 80 } }),
+C.scaffoldStep(1, "What is the formula?", "It starts with V"),
+C.scaffoldStep(2, "Convert units:", "mA → A: divide by 1000"),
+C.scaffoldStep(3, "Calculate:", null),
+```
+
+### 8.6 Extended Response Pattern
+
+Three-phase: Think → Plan → Write.
+
+```js
+C.sectionTag("Extended Response"),
+
+new Paragraph({ children: [
+  new TextRun({ text: "10. ", bold: true }),
+  new TextRun("Extended question... Aim for 100–150 words.")
+], spacing: { before: 200, after: 80 } }),
+
+C.hintBox("Use the planning steps first, then the sentence starters."),
+
+// Phase 1: Planning
+new Paragraph({ children: [
+  new TextRun({ text: "PLANNING STEPS — fill these in first:", bold: true, color: C.COLOURS.primary, size: 22 })
+], spacing: { before: 160, after: 80 } }),
+C.scaffoldStep(1, "What concept applies?", "Hint in brackets"),
+C.scaffoldStep(2, "What evidence supports this?", null),
+C.scaffoldStep(3, "What is the conclusion?", null),
+C.scaffoldStep(4, "Preview your fix/solution:", null),
+
+// Phase 2: Writing with starters
+new Paragraph({ children: [
+  new TextRun({ text: "NOW WRITE YOUR PARAGRAPH:", bold: true, color: C.COLOURS.primary, size: 22 })
+], spacing: { before: 240, after: 80 } }),
+
+new Paragraph({
+  children: [
+    new TextRun({ text: "The claim is incorrect because ", italics: true, color: "808080" }),
+    new TextRun({ text: "______________________ ." })
+  ],
+  spacing: { after: 80 }, indent: { left: 240 }
+}),
+...C.linedAnswerSpace(2),
+// ... more starter + space pairs
+```
+
+### 8.7 Practical-on-Paper Pattern
+
+Two activity types:
+
+**Type A — Identify/Judge table:**
+Uses the Worked → Hinted → Independent tier system. First row fully worked (`cellWELabel` + `cellWE`), second row hinted (`cellHint`), remaining rows blank (`cellE`).
+
+**Type B — Sketch/Build:**
+```js
+C.h4("Activity NB — Title"),
+
+// Step 1: Study the worked example
+new Paragraph({ children: [
+  new TextRun({ text: "STEP 1 — Study this worked example.", bold: true, color: C.COLOURS.primary, size: 24 })
+], spacing: { before: 120, after: 80 } }),
+C.p("Below is a labelled example. Notice all the parts that are labelled."),
+// ... diagram/table ...
+
+// Step 2: Draw your own
+new Paragraph({ children: [
+  new TextRun({ text: "STEP 2 — Now you draw your own.", bold: true, color: C.COLOURS.primary, size: 24 })
+], spacing: { before: 240, after: 100 } }),
+C.calloutBox("✅ CHECKLIST — your sketch must include:", [
+  C.bullet("Requirement 1"),
+  C.bullet("Requirement 2"),
+]),
+...C.drawingSpace(3.5, "Drawing space:"),
+```
+
+---
+
+## 9. Teacher Edition Patterns
+
+When building a booklet with a paired teacher edition, these patterns are used in the teacher document. The teacher edition is a separate build (separate `build.js` invocation with different `resource.config.json`, typically pointing at a different content folder like `content/my-booklet-teacher/`).
+
+### 9.1 Teacher Colour Palette
+
+```js
+const TC = {
+  red: "C00000",           // teacher cover headings
+  green: "385723",         // answer text
+  greenBg: "E2EFDA",       // answer box background
+  greenBorder: "70AD47",   // answer box border
+  amber: "BF8F00",         // teaching note heading
+  amberBg: "FFF2CC",       // teaching note background
+  amberBorder: "FFC000",   // teaching note border
+  greyText: "595959"       // question references
+};
+```
+
+### 9.2 Answer Box
+
+Green left-border box with "✓ ANSWER" heading. Body text is green.
+
+```js
+function answerBox(bodyParagraphs) {
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [9360],
+    rows: [new TableRow({ children: [new TableCell({
+      borders: {
+        top:    { style: BorderStyle.SINGLE, size: 6,  color: TC.greenBorder },
+        bottom: { style: BorderStyle.SINGLE, size: 6,  color: TC.greenBorder },
+        left:   { style: BorderStyle.SINGLE, size: 18, color: TC.greenBorder },
+        right:  { style: BorderStyle.SINGLE, size: 6,  color: TC.greenBorder },
+      },
+      width: { size: 9360, type: WidthType.DXA },
+      shading: { fill: TC.greenBg, type: ShadingType.CLEAR },
+      margins: { top: 120, bottom: 120, left: 200, right: 200 },
+      children: [
+        new Paragraph({
+          children: [new TextRun({ text: "✓ ANSWER", bold: true, color: TC.green, size: 22 })],
+          spacing: { after: 80 }
+        }),
+        ...bodyParagraphs
+      ]
+    })] })]
+  });
+}
+```
+
+### 9.3 Teaching Note Box
+
+Amber left-border box with "⚠ TEACHING NOTE" heading. Used for pacing advice, common misconceptions, and marking approach notes.
+
+```js
+function teachingNote(bodyParagraphs) {
+  // Same structure as answerBox but with amber colours
+  // Borders: TC.amberBorder, Background: TC.amberBg, Heading: TC.amber
+}
+```
+
+### 9.4 Question Reference
+
+Italic grey text linking teacher answers back to student questions:
+
+```js
+function qRef(text) {
+  return new Paragraph({
+    children: [new TextRun({ text, italics: true, color: TC.greyText, size: 20 })],
+    spacing: { before: 200, after: 80 }
+  });
+}
+// Usage: qRef("Q1: Best example of an INPUT")
+```
+
+### 9.5 Answer Paragraphs and Bullets
+
+Green text for all answer content:
+
+```js
+function aPara(text) {
+  return new Paragraph({
+    children: [new TextRun({ text, color: TC.green, size: 22 })],
+    spacing: { after: 60 }
+  });
+}
+function aBullet(text) {
+  return new Paragraph({
+    children: [
+      new TextRun({ text: "• ", color: TC.green, bold: true }),
+      new TextRun({ text, color: TC.green })
+    ],
+    spacing: { after: 40 }, indent: { left: 240 }
+  });
+}
+```
+
+### 9.6 Marking Criteria
+
+For extended response questions, include a marking criteria breakdown inside a teaching note:
+
+```js
+teachingNote([
+  new Paragraph({ children: [
+    new TextRun({ text: "MARKING CRITERIA (out of 6):", bold: true, size: 22 })
+  ] }),
+  new Paragraph({ children: [
+    new TextRun({ text: "• 1 mark — States the circuit is incomplete / not a closed loop", size: 22 })
+  ], spacing: { after: 40 } }),
+  new Paragraph({ children: [
+    new TextRun({ text: "• 1 mark — Recognises voltage IS present at the LED", size: 22 })
+  ], spacing: { after: 40 } }),
+  // ... more criteria ...
+]),
+```
+
+### 9.7 Teacher Cover Page
+
+Red "TEACHER COPY — CONFIDENTIAL" cover:
+
+```js
+function teacherCover() {
+  return [
+    new Paragraph({
+      children: [new TextRun({ text: "TEACHER COPY", bold: true, size: 56, color: TC.red })],
+      alignment: AlignmentType.CENTER, spacing: { before: 1800 }
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: "CONFIDENTIAL", bold: true, size: 36, color: TC.red })],
+      alignment: AlignmentType.CENTER, spacing: { after: 600 }
+    }),
+    // ... course title, week, description ...
+    // Red-bordered usage notice box
+  ];
+}
+```
+
+### 9.8 "How to Teach" Guide
+
+Structured page with:
+- **Pacing** — time estimates per lesson
+- **Common Misconceptions** — bulleted list of pitfalls
+- **Marking Approach** — how to score each question type
+
+### 9.9 common.js Additions for Teacher Edition
+
+`common.js` should export these additional functions:
+
+```
+teacherHeader(text)    → Header object (red-themed or standard)
+teacherFooter()        → Footer object (same as studentFooter usually)
+```
+
+Teachers use the same `C.studentHeader()`/`C.studentFooter()` or these teacher-specific variants depending on design choice. The teacher edition typically reuses most `C.*` helpers, adding the TC colour palette and answer/note boxes locally in its build script.
+
+---
+
+## 10. Scaffolding Patterns Catalogue
 
 ### Pattern 1: "The Answer Is In The Hint"
 
@@ -883,7 +1258,7 @@ Pre-built tables with some cells pre-filled and others containing `_____________
 
 ---
 
-## 9. Practical-on-Paper Patterns
+## 11. Practical-on-Paper Patterns
 
 ### 9.1 Spot-the-Break / Identify Activity
 
@@ -953,7 +1328,7 @@ Value is in DXA. 2880 DXA ≈ 2 inches.
 
 ---
 
-## 10. Colour & Sizing Conventions
+## 12. Colour & Sizing Conventions
 
 ### 10.1 Colour Palette
 
@@ -998,7 +1373,7 @@ Value is in DXA. 2880 DXA ≈ 2 inches.
 
 ---
 
-## 11. Building Different Resource Types
+## 13. Building Different Resource Types
 
 All resource types use the same `build.js`. Only `resource.config.json` and `content/` differ.
 
@@ -1013,7 +1388,12 @@ All resource types use the same `build.js`. Only `resource.config.json` and `con
 ### C. Multi-Week Booklet
 - Config: `"landscape": false`
 - Content: `01-cover.js`, `02-contents.js`, `03-howto.js`, `10-lesson1.js`…`90-reference.js`
-- Each lesson uses the full Section 7 template (objectives, theory, worked examples, MC, short answer, extended response, practical).
+- Each lesson uses the Section 8 pedagogical sequence (objectives → theory → worked examples → MC → short answer → extended response → practical).
+
+**With paired teacher edition:** Build twice with separate configs.
+- Student config: `"outputFile": ".../Student.docx"`, `"header": "..."`
+- Teacher config: `"outputFile": ".../Teacher.docx"`, `"header": "...Teacher Edition"`
+- Teacher content uses answer boxes (green), teaching notes (amber), marking criteria.
 
 ### D. Assessment / Exam
 - Config: `"landscape": false`
@@ -1049,7 +1429,7 @@ Output: `./output/ResourceName.docx`
 
 ---
 
-## 12. Quick-Reference Cheat Sheet
+## 14. Quick-Reference Cheat Sheet
 
 ### C (Common) Cheat Sheet
 
@@ -1099,6 +1479,25 @@ C.a4PageProps
 C.a4LandscapeProps
 C.studentHeader("text")
 C.studentFooter()
+C.teacherHeader("text")   // for teacher editions
+C.teacherFooter()
+
+// Teacher Edition Helpers (defined locally in teacher build script)
+answerBox([...])          // green left-border box with "✓ ANSWER"
+teachingNote([...])       // amber left-border box with "⚠ TEACHING NOTE"
+qRef("Q1: ...")           // italic grey question reference
+aPara("text")             // green-tinted answer paragraph
+aBullet("text")           // green-tinted answer bullet
+
+// Booklet Pedagogical Sequence (per lesson)
+//  1. Lesson Banner      C.lessonBanner(N, title, subtitle)
+//  2. Objectives         C.calloutBox("LEARNING OBJECTIVES", [...])
+//  3. Theory             C.h2() + C.h3() + C.p() + tables
+//  4. Worked Examples    C.workedExample() × 2-3 (incl. 1 "Now You Try")
+//  5. MC Questions       Q1 easy+hint, Q2-6 ramping (C.mcQuestion)
+//  6. Short Answer       sentence starters, fill-in tables, scaffolded steps
+//  7. Extended Response  planning steps → starters → lined spaces
+//  8. Practical on Paper  spot-the-break or sketch-and-label
 ```
 
 ### H (Local Helpers) Cheat Sheet
@@ -1169,8 +1568,10 @@ numberingConfig  docx numbering config
 a4PageProps      { pageSize, margins } (portrait A4)
 a4LandscapeProps { pageSize, margins } (landscape A4)
 
-studentHeader(text)    → header object
-studentFooter()        → footer object
+studentHeader(text)    → header object (student-themed)
+studentFooter()        → footer object with page numbers
+teacherHeader(text)    → header object (teacher-themed, for answer booklets)
+teacherFooter()        → footer object (same as studentFooter typically)
 
 pageBreak()            → PageBreak element
 

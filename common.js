@@ -81,6 +81,30 @@ function studentFooter() {
   });
 }
 
+// Teacher edition header (red-tinted, used for answer booklets)
+function teacherHeader(text) {
+  return new Header({
+    children: [new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { after: 0 },
+      children: [new TextRun({ text: "TEACHER COPY · " + text, italics: true, color: "C00000", size: 18 })]
+    })]
+  });
+}
+
+// Teacher edition footer
+function teacherFooter() {
+  return new Footer({
+    children: [new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({ text: "CONFIDENTIAL · Page ", size: 18, color: "C00000" }),
+        new TextRun({ children: [PageNumber.CURRENT], size: 18, color: "C00000" })
+      ]
+    })]
+  });
+}
+
 // ---- PAGE BREAK ----
 function pageBreak() {
   return new Paragraph({ children: [new PageBreak()] });
@@ -392,6 +416,8 @@ module.exports = {
   a4LandscapeProps,
   studentHeader,
   studentFooter,
+  teacherHeader,
+  teacherFooter,
   pageBreak,
   h1, h2, h3, h4,
   p, bullet, bulletRich,
