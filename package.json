@@ -1,0 +1,15 @@
+{
+  "name": "docx-teaching-resource-builder",
+  "version": "1.0.0",
+  "description": "Programmatic .docx teaching resource builder — generates scaffolded paper-based worksheets, booklets, assessments, and lab manuals from JavaScript content modules.",
+  "main": "build.js",
+  "scripts": {
+    "build": "node build.js",
+    "build:week1": "node buildweek1.js"
+  },
+  "keywords": ["docx", "education", "teaching", "worksheet-generator"],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "docx": "^9.0.0"
+  }
+}
