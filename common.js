@@ -43,20 +43,27 @@ const docStyles = {
 };
 
 // ---- NUMBERING CONFIG ----
-const numberingConfig = {
-  config: [
-    {
-      reference: "mc-default",
-      levels: [{
-        level: 0,
-        format: NumberFormat.LOWER_LETTER,
-        text: "%1.",
-        alignment: AlignmentType.LEFT,
-        style: { paragraph: { indent: { left: 720, hanging: 360 } } }
-      }]
-    }
-  ]
+// Pre-defines all common MC references so any content module can use
+// any reference like mc-q1, mc-ws3, etc. without pre-declaration.
+// Format: a. b. c. d. — resets for each unique reference.
+const _mcLevel = {
+  level: 0,
+  format: NumberFormat.LOWER_LETTER,
+  text: "%1.",
+  alignment: AlignmentType.LEFT,
+  style: { paragraph: { indent: { left: 720, hanging: 360 } } }
 };
+
+// Generate mc-q1 through mc-q50 and mc-ws1 through mc-ws50
+const _mcConfigs = [
+  { reference: "mc-default", levels: [_mcLevel] }
+];
+for (let i = 1; i <= 50; i++) {
+  _mcConfigs.push({ reference: `mc-q${i}`, levels: [_mcLevel] });
+  _mcConfigs.push({ reference: `mc-ws${i}`, levels: [_mcLevel] });
+}
+
+const numberingConfig = { config: _mcConfigs };
 
 // ---- HEADER / FOOTER ----
 function studentHeader(text) {

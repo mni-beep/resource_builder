@@ -1,9 +1,9 @@
 {
-  "title": "Year 9 Science — Electricity Unit Guide",
+  "title": "Year 9 Science — Circuit Components & Symbols",
   "creator": "Science Faculty",
-  "outputFile": "./output/Y9_Electricity_Unit_Guide.docx",
-  "header": "Year 9 Science · Electricity Unit Guide",
-  "contentDir": "./content/electricity-unit-guide",
+  "outputFile": "./output/Y9_Circuit_Components_Worksheet.docx",
+  "header": "Year 9 Science · Circuit Components & Symbols",
+  "contentDir": "./content/circuit-components-worksheet",
   "footer": true,
-  "landscape": true
+  "landscape": false
 }
