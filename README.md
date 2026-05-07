@@ -10,13 +10,13 @@ Describe what you want, answer a few questions, and this tool produces a print-r
 
 | Resource Type | Example |
 |---|---|
-| **Single worksheet** | "Photosynthesis: Light & Dark Reactions" — 2 pages, theory + 5 MC + 3 short answer |   (TESTED WORKING)
-| **Multi-week booklet** | "Year 10 Electronics & Arduino" — 6 weeks × 4 lessons, cover page, contents, glossary | (TESTED WORKING)
-| **Booklet + teacher edition** | Student booklet + separate answer key with teaching notes, marking criteria, and pedagogical guidance | (TESTED WORKING)
-| **Unit guide / curriculum map** | "Year 9 Electricity" — landscape table with 7 columns: Week, Topic, Content, Activities, Resources, Assessment, Inclusion | (TESTED WORKING)
-| **Assessment / exam** | "Semester 1 Physics Exam" — student paper + separate marking key | (UNTESTED)
-| **Lab / practical manual** | "Chemistry Lab Manual" — procedures, report templates, scaffolded analysis | (UNTESTED)
-| **Revision / study guide** | "VCE Biology Unit 3 Summary" — dense theory, reference tables, formula sheets | (UNTESTED)
+| **Single worksheet** | (TESTED WORKING) "Photosynthesis: Light & Dark Reactions" — 2 pages, theory + 5 MC + 3 short answer |
+| **Multi-week booklet** | (TESTED WORKING) "Year 10 Electronics & Arduino" — 6 weeks × 4 lessons, cover page, contents, glossary |
+| **Booklet + teacher edition** | (TESTED WORKING) Student booklet + separate answer key with teaching notes, marking criteria, and pedagogical guidance |
+| **Unit guide / curriculum map** | (TESTED WORKING) "Year 9 Electricity" — landscape table with 7 columns: Week, Topic, Content, Activities, Resources, Assessment, Inclusion |
+| **Assessment / exam** | (UNTESTED) "Semester 1 Physics Exam" — student paper + separate marking key |
+| **Lab / practical manual** | (UNTESTED) "Chemistry Lab Manual" — procedures, report templates, scaffolded analysis |
+| **Revision / study guide** | (UNTESTED)  "VCE Biology Unit 3 Summary" — dense theory, reference tables, formula sheets |
 
 ---
 
