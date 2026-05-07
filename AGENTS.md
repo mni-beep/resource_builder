@@ -6,11 +6,17 @@ A Node.js pipeline that generates `.docx` teaching resources (worksheets, bookle
 
 ## Your job as an agent
 
-When a user asks you to create a teaching resource, you MUST interview them BEFORE writing any code. Never assume — always ask.
+When a user asks you to create a teaching resource, first ask whether they:
+1. **Give custom instructions** — they tell you exactly what they want in their own words, and you build from that
+2. **Go through the questionnaire** — you walk through the structured interview below to gather requirements
+
+If they choose custom instructions, extract the details you need and skip to Phase 2. If they choose the questionnaire, proceed with Phase 1 below.
+
+Never assume — always ask. Never write code before you have all the answers.
 
 ---
 
-## Phase 1: INTERVIEW (always do this first)
+## Phase 1: INTERVIEW (only if user chose the questionnaire)
 
 Ask the following questions. The questions you ask **branch based on Question 1** — the resource type determines which follow-ups are relevant. Do NOT ask every question for every resource type. Tailor the interview to what the user wants.
 

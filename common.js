@@ -245,11 +245,14 @@ function hintBox(text) {
 }
 
 // ---- SENTENCE STARTER ----
+// Halves any consecutive underscore run so inline blanks (e.g.
+// "________") always fit on one line without wrapping.
 function sentenceStarter(text) {
+  const fixed = text.replace(/_+/g, m => '_'.repeat(Math.ceil(m.length / 2)));
   return new Paragraph({
-    spacing: { before: 40, after: 80 },
+    spacing: { before: 40, after: 40 },
     indent: { left: 240 },
-    children: [new TextRun({ text, italics: true, color: "808080", size: 20 })]
+    children: [new TextRun({ text: fixed, italics: true, color: "808080", size: 20 })]
   });
 }
 
