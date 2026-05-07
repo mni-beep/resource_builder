@@ -1,9 +1,9 @@
 {
-  "title": "Year 11 Drama — Performance Styles Booklet",
-  "creator": "Drama Faculty",
-  "outputFile": "./output/Y11_Drama_Performance_Styles_Booklet.docx",
-  "header": "Year 11 Drama · Performance Styles",
-  "contentDir": "./content/performance-styles-booklet",
+  "title": "Year 9 Electronics — Integrated Design Project",
+  "creator": "Technology Faculty",
+  "outputFile": "./output/Y9_Electronics_Design_Project_Booklet.docx",
+  "header": "Year 9 Electronics · Design Project",
+  "contentDir": "./content/electronics-project-booklet",
   "footer": true,
   "landscape": false
 }

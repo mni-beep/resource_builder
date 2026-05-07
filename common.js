@@ -271,11 +271,18 @@ function scaffoldStep(n, prompt, hint) {
 }
 
 // ---- LINED ANSWER SPACE ----
+// Creates proper ruled lines using paragraph bottom borders.
+// Each "line" is a paragraph with just a space in it and a thin grey
+// bottom border — this produces clean, continuous lines that students
+// can write on, unlike underscore characters which gap in Calibri.
 function linedAnswerSpace(count) {
   return Array.from({ length: count }, () =>
     new Paragraph({
-      spacing: { after: 120 },
-      children: [new TextRun({ text: "_".repeat(80), color: "BFBFBF", size: 20 })]
+      spacing: { after: 200 },
+      border: {
+        bottom: { style: BorderStyle.SINGLE, size: 2, color: "BFBFBF", space: 1 }
+      },
+      children: [new TextRun({ text: " ", size: 22 })]
     })
   );
 }
