@@ -1,9 +1,9 @@
 {
-  "title": "Year 9 Science — Circuit Components & Symbols",
-  "creator": "Science Faculty",
-  "outputFile": "./output/Y9_Circuit_Components_Worksheet.docx",
-  "header": "Year 9 Science · Circuit Components & Symbols",
-  "contentDir": "./content/circuit-components-worksheet",
+  "title": "Year 11 Drama — Performance Styles Booklet",
+  "creator": "Drama Faculty",
+  "outputFile": "./output/Y11_Drama_Performance_Styles_Booklet.docx",
+  "header": "Year 11 Drama · Performance Styles",
+  "contentDir": "./content/performance-styles-booklet",
   "footer": true,
   "landscape": false
 }

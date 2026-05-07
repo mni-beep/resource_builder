@@ -54,13 +54,22 @@ const _mcLevel = {
   style: { paragraph: { indent: { left: 720, hanging: 360 } } }
 };
 
-// Generate mc-q1 through mc-q50 and mc-ws1 through mc-ws50
+// Generate mc-default + mc-{prefix}{number} for all single-letter prefixes
+// and common multi-letter prefixes. Any agent can use mc-X{n} without
+// pre-declaration as long as the prefix is listed here.
+// Single-letter: mc-a1..mc-z50  → covers mc-l1, mc-s1, mc-q1, mc-p1 etc.
+// Multi-letter:  mc-ws1..mc-ws50, mc-def1..mc-def50  → backward compat
+const PREFIXES = [
+  ...'abcdefghijklmnopqrstuvwxyz'.split(''),  // single-letter a-z
+  'ws', 'def'   // common multi-letter prefixes (worksheet, default)
+];
 const _mcConfigs = [
   { reference: "mc-default", levels: [_mcLevel] }
 ];
-for (let i = 1; i <= 50; i++) {
-  _mcConfigs.push({ reference: `mc-q${i}`, levels: [_mcLevel] });
-  _mcConfigs.push({ reference: `mc-ws${i}`, levels: [_mcLevel] });
+for (const prefix of PREFIXES) {
+  for (let i = 1; i <= 50; i++) {
+    _mcConfigs.push({ reference: `mc-${prefix}${i}`, levels: [_mcLevel] });
+  }
 }
 
 const numberingConfig = { config: _mcConfigs };
