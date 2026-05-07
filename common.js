@@ -274,8 +274,8 @@ function scaffoldStep(n, prompt, hint) {
 function linedAnswerSpace(count) {
   return Array.from({ length: count }, () =>
     new Paragraph({
-      spacing: { before: 80, after: 240 },
-      children: [new TextRun({ text: "_".repeat(80), color: "BFBFBF", size: 20, bold: true })]
+      spacing: { before: 200, after: 240 },
+      children: [new TextRun({ text: "_".repeat(200), color: "BFBFBF", size: 20, bold: true })]
     })
   );
 }
