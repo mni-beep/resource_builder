@@ -100,6 +100,12 @@ For each section/lesson, what question types?
 - [ ] Short answer with sentence starters — how many? ___
 - [ ] Extended response with planning scaffolds — how many? ___
 - [ ] Fill-in tables / diagrams
+- [ ] Three-tier scaffolding tables (worked → hinted → independent)
+- [ ] Comparison questions (side-by-side tables)
+- [ ] Structured planning forms (project proposals, testing logs, bills of materials)
+- [ ] Hands-on demo activities with post-activity reflection
+- [ ] Troubleshooting / fault-finding scenarios
+- [ ] Teach-back / explain-to-others prompts
 - [ ] Practical-on-paper activities
 - [ ] Code-writing by hand (for programming/CS subjects)
 - [ ] Worked examples — how many per section? ___
