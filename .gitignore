@@ -9,8 +9,31 @@ __v0_jsx-dev-runtime.ts
 # Environment variables
 .env*.local
 
-# Common ignores
-node_modules
+# Dependencies
+node_modules/
+
+# Next.js / Vercel scaffolding (was added by v0, not part of the project)
 .next/
+.next.d.ts
+app/
+components/
+hooks/
+lib/
+public/
+styles/
+next-env.d.ts
+next.config.mjs
+postcss.config.mjs
+tsconfig.json
+components.json
+pnpm-lock.yaml
+
+# OS files
 .DS_Store
-.vercel
+
+# Build output (generated .docx / .pptx files)
+output/
+
+# Videos (cached YouTube downloads)
+content/videos/
+content/
