@@ -218,6 +218,21 @@ function loadContentModules(contentDir) {
   }
 
   console.log(`  Total elements assembled: ${allContent.length}\n`);
+
+  // ---- VALIDATION: detect nested arrays (missing spread on multi-element helpers) ----
+  const badIndices = [];
+  allContent.forEach((el, i) => {
+    if (Array.isArray(el)) badIndices.push(i);
+    else if (el === undefined || el === null) badIndices.push(i);
+  });
+  if (badIndices.length > 0) {
+    console.error(`  ✗ CORRUPTION DETECTED — ${badIndices.length} element(s) at indices ${badIndices.slice(0, 10).join(', ')} are arrays or null/undefined.`);
+    console.error('    Likely cause: missing spread operator (...) on a helper that returns an array.');
+    console.error('    Check calls to C.linedAnswerSpace(), C.drawingSpace(), C.lessonBanner(), C.mcQuestion().');
+    console.error('    Each should be spread: ...C.linedAnswerSpace(3), not C.linedAnswerSpace(3),');
+    process.exit(1);
+  }
+
   return allContent;
 }
 

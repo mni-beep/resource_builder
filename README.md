@@ -1,114 +1,99 @@
-# 📄 DOCX Teaching Resource Builder
+# 📄📊 Teaching Resource Builder
 
-**Generate scaffolded paper-based teaching resources as `.docx` files — programmatically.**
+**Generate scaffolded teaching resources as `.docx` worksheets/booklets AND `.pptx` slide decks — programmatically.**
 
-Describe what you want, answer a few questions, and this tool produces a print-ready Word document complete with theory sections, worked examples, multiple-choice questions, short-answer prompts, extended-response scaffolds, practical-on-paper activities, diagrams, and reference sheets. No Microsoft Office required.
+Describe what you want, answer a few questions, and this tool produces print-ready Word documents and presentation-ready PowerPoint files. No Microsoft Office required to build.
 
 ---
 
 ## ✨ What It Produces
 
-| Resource Type | Example |
+### DOCX (printable paper resources)
+
+| Resource Type | Status |
 |---|---|
-| **Single worksheet** | (TESTED WORKING) "Photosynthesis: Light & Dark Reactions" — 2 pages, theory + 5 MC + 3 short answer |
-| **Multi-week booklet** | (TESTED WORKING) "Year 10 Electronics & Arduino" — 6 weeks × 4 lessons, cover page, contents, glossary |
-| **Booklet + teacher edition** | (TESTED WORKING) Student booklet + separate answer key with teaching notes, marking criteria, and pedagogical guidance |
-| **Unit guide / curriculum map** | (TESTED WORKING) "Year 9 Electricity" — landscape table with 7 columns: Week, Topic, Content, Activities, Resources, Assessment, Inclusion |
-| **Assessment / exam** | (UNTESTED) "Semester 1 Physics Exam" — student paper + separate marking key |
-| **Lab / practical manual** | (UNTESTED) "Chemistry Lab Manual" — procedures, report templates, scaffolded analysis |
-| **Revision / study guide** | (UNTESTED)  "VCE Biology Unit 3 Summary" — dense theory, reference tables, formula sheets |
+| **Single worksheet** | ✅ Tested — 1–2 pages, theory + MC + short answer + extended response |
+| **Multi-lesson booklet** | ✅ Tested — cover, contents, how-to page, lessons, glossary |
+| **Booklet + teacher edition** | ✅ Tested — student booklet + separate answer key with marking criteria |
+| **Unit guide / curriculum map** | ✅ Tested — landscape table, 7 columns, full term planning |
+| **Assessment / exam** | 🆕 Available — sections, marking key support |
+| **Lab / practical manual** | 🆕 Available — procedures + report templates |
+| **Revision / study guide** | 🆕 Available — dense theory, reference tables |
+
+### PPTX (screen-presented slide decks)
+
+| Resource Type | Status |
+|---|---|
+| **E5 lesson deck** | ✅ Tested — 5-phase (Engage→Explore→Explain→Elaborate→Evaluate), colour-coded |
+| **Standard lesson deck** | ✅ Tested — title → objectives → theory → worked examples → questions → summary |
+| **Revision deck** | 🆕 Available — topic review with section dividers |
+| **Assessment walkthrough** | 🆕 Available — slide-by-slide questions, answers in speaker notes |
+| **Lab/practical intro** | 🆕 Available — safety, procedure, checklist |
+| **Short presentation** | 🆕 Available — 5–8 slides, quick intro or recap |
 
 ---
 
-## 🎨 Features
+## 🎨 Key Features
 
-### Question Types (all paper-friendly)
+### DOCX
+- **14+ question types** — MC, short answer, extended response, fill-in tables, three-tier scaffolding, comparison tables, practical-on-paper, code-writing
+- **Configurable scaffolding** — Heavy (sentence starters + hidden answers), Moderate (hints + checklists), Light (blank spaces), or Mix
+- **Structured boxes** — Callout boxes, worked examples (green), hint boxes (grey), lesson banners, teacher sign-off, completion checklists
+- **Diagrams** — ASCII diagrams using box-drawing characters (offline-friendly), or open-source images from subject repositories (OpenStax, Wikimedia, PhET, NASA, etc.)
+- **Teacher editions** — Separate build with green answer boxes, amber teaching notes, marking criteria
 
-- **Multiple choice** — 4 options per question, with easy "warm-up" questions that ramp in difficulty (first answer often visible in a nearby hint box)
-- **Short answer** — sentence starters so students know how to begin, plus fill-in-the-blank chains that build a full paragraph when completed
-- **Extended response** — planning scaffolds (5-step prompts), then paragraph starters interleaved with lined writing spaces, plus a "what to include" checklist
-- **Fill-in tables** — pre-built tables with some cells blank for student completion; reference tables above provide all the answers
-- **Three-tier scaffolding tables** — worked example row (green borders) → hinted row (grey italic hints) → independent rows (blank cells), e.g. "Spot the Error" or "YES/NO/Why" activity tables
-- **Comparison questions** — structured side-by-side tables comparing concepts, styles, or theories (e.g. "Rich Theatre vs Poor Theatre", "Series vs Parallel")
-- **Practical-on-paper** — spot-the-error tables, sketch-and-label boxes, checklist-driven drawing tasks
-- **Structured planning forms** — project proposals with material lists, component tables, and success criteria; pre-formatted testing logs (Test # | Setup | Result | Notes)
-- **Hands-on demo activities** — step-by-step practical exercises (`C.scaffoldStep`) paired with post-activity reflection questions and sentence starters
-- **Troubleshooting scenarios** — "Problem: X happens. What are possible causes?" with diagnosis steps and guided solution write-ups
-- **Teach-back / explain-to-others** — structured prompts preparing students to teach a concept to a peer, including 5-step planning scaffolds and teaching script templates
-- **Worked examples** — step-by-step solved problems in bordered green boxes, with bold step headings and bullet-point reasoning
-- **"Now you try"** — mirrored problems with answers hidden below a "👇 ANSWER (cover this until you've tried)" divider
-- **Code-writing by hand** — for programming/CS subjects
+### PPTX
+- **E5 instructional model** — Learning Intention → Engage → Explore → Explain → Elaborate → Evaluate, with colour-coded phase buttons and SM (Success Measure) bars
+- **25+ slide types** — title, objectives, content, two-column, tables, images, worked examples, MC, short answer, extended response, checklists, callouts, big ideas, ASCII diagrams, custom
+- **Speaker notes** — All answers, teaching guidance, and marking criteria go into speaker notes for Presenter View (no separate teacher file needed)
+- **🎬 Embedded YouTube videos** — Auto-searches the web for relevant educational videos, downloads via `yt-dlp`, embeds playable MP4 directly in Engage/Explore slides (see below)
+- **🖼️ Open-source images** — Auto-resolved from `content/images/` with figure captions
+- **Companion worksheets** — E5 Elaborate phase can pair with a DOCX worksheet (activities + peer review + answer key)
 
-### Scaffolding Intensity (configurable)
+### YouTube Video Pipeline 🎬
 
-| Level | What's baked in |
+| Step | What happens |
 |---|---|
-| **Heavy** | Sentence starters, planning steps, hints pointing to exact answer locations, hidden answers under every "try it" |
-| **Moderate** | Hints, some sentence starters, checklists |
-| **Light** | Minimal hints, mostly blank answer spaces |
-| **Mix** | Easy questions heavily scaffolded, harder questions progressively less so |
+| 1. Search | Agent searches YouTube via browser, extracts real video titles/channels/URLs (never placeholders) |
+| 2. Download | `yt-dlp.exe` in `tools/` downloads the video on first build, caches to `content/videos/` |
+| 3. Embed | Video appears in the **right column of Engage or Explore slides** — not a standalone slide |
+| 4. Playback | PowerPoint-compatible MP4 (H.264 video + AAC audio). `ffmpeg` is optional — without it, the builder uses a single native MP4 stream that still plays in PowerPoint |
 
-### Structured Content Boxes
+### Corruption Detection 🛡️
 
-- **Callout boxes** — key concepts, learning objectives, critical rules, safety warnings, quick summaries, project overviews, teaching tips, activity goals (12+ pre-built titles with colour conventions)
-- **Worked example boxes** — bordered green boxes with step-by-step solutions; can contain tables, ASCII diagrams, and multi-paragraph explanations
-- **Hint boxes** — italic grey prompts directing students to exact answer locations (e.g. "Look at the reference table on page 3 — the answer is in the first row")
-- **Lesson / phase banners** — full-width section dividers with number, title, and subtitle (e.g. "LESSON 2: Poor Theatre · Poland, 1960s" or "PHASE 3: Build & Finish · Weeks 5–6")
-- **Quick summary boxes** — at-a-glance reference with bold-labelled bullets (Founder | Time | Goal | Main tools | Famous quote)
-- **Activity goal callouts** — single-sentence objective for hands-on exercises, styled in the resource's primary colour
-- **Teacher sign-off boxes** — milestone gates with checklist and signature line (e.g. "✅ TEACHER SIGN-OFF — BREADBOARD PROTOTYPE")
-- **Completion checklists** — phase or project-end boxes with ☐ task items and a success message ("WELL DONE! You have completed your project. 🎉")
-- **Project proposal forms** — structured input forms with component/materials tables and success criteria sections
-- **Answer boxes** — green left-border boxes with "✓ ANSWER" for teacher editions
-- **Teaching note boxes** — amber left-border boxes with "⚠ TEACHING NOTE" for pedagogical guidance
-- **Big display cells** — thick-bordered highlight boxes for key facts, with custom background fill and centred header + body
+Both `build.js` and `build-pptx.js` now scan assembled content for:
+- Nested arrays (missing `...` spread on array-returning helpers)
+- `null`/`undefined` elements
+- Invalid slide definition types
 
-### Diagrams & Images
-
-- **ASCII diagrams** — circuits, flowcharts, and diagrams using box-drawing characters (╔═╗╚═╝). Works offline, always renders.
-- **Open-source images** — pull from subject-specific repositories (OpenStax, Wikimedia Commons, PhET, NASA, USGS, Fritzing, and more). Images are fetched, verified for license compatibility, and embedded directly into the document.
-- **Figure captions** — auto-generated below every image.
-
-### Document Structure
-
-- **Cover pages** — title + subtitle + decorative dividers + student detail fields (name, class, teacher, dates)
-- **Table of contents pages** — multi-column tables with ☐ checkboxes, phase/week tags, section numbers, and page number slots
-- **"How to use" pages** — workbook navigation with phase/lesson overview callouts and icon legend (📖 Theory, 📘 Worked Example, ✏️ Fill-In, etc.)
-- **Running headers and footers** — italic grey header on every page; page numbers centred in footer
-- **Phase / lesson banners** — full-width section dividers at the start of every major section
-- **Drafting & sketch spaces** — labelled drawing areas (`.drawingSpace()`) for circuit schematics, enclosure designs, and project sketches
-- **Reference sections** — glossaries (Term | Definition tables), resistor colour code tables (Colour | Digit | Multiplier | Example), soldering guides (good vs bad joints, common mistakes), 3D printing quick-reference (settings table + design considerations), formula sheets (Ohm's Law, LED resistor calculation with worked examples)
-- **Comparison tables** — side-by-side feature comparison across styles/theories/formulas (e.g. 3 performance styles across 7 dimensions)
-- **Project summary tables** — final reflection format (Aspect | Your answer) for post-project debrief
-- **Teacher sign-off pages** — milestone gate sections with checklist and signature line
-- **Completion pages** — final "PROJECT COMPLETION CHECKLIST" with ☐ items and celebratory message
-- **Landscape curriculum maps** — 7-column tables for unit guides (Week | Topic | Content | Activities | Resources | Assessment | Inclusion) with multi-paragraph cells
+If corruption is detected, the build **refuses to continue** with a clear error message naming the likely cause.
 
 ---
 
 ## 🚀 How It Works
 
-### For Humans
+### For Users
 
-1. **Describe your resource** to an AI agent — "I need a Year 9 worksheet on tectonic plate boundaries"
-2. **Answer the interview** — the agent asks about resource type, subject, difficulty, question mix, scaffolding level, diagrams, etc.
-3. **The agent builds it** — creates content modules, updates config, and runs the build
-4. **Get your `.docx`** — open it in Word, Google Docs, or LibreOffice
+1. **Describe your resource** to an AI agent — "I need a Year 9 E5 lesson on series circuits with an embedded video"
+2. **Answer the interview** — the agent asks about format (DOCX/PPTX), resource type, subject, difficulty, question mix, scaffolding, images, videos, etc.
+3. **The agent builds it** — creates content modules, updates config, runs the build
+4. **Get your file** — open `.docx` in Word or `.pptx` in PowerPoint
 
 ### For AI Agents
 
-The project contains two instruction files:
-- **`AGENTS.md`** — mandatory interview process (9 questions covering every aspect of the resource)
-- **`DOCX_BUILDER_REFERENCE.md`** — complete technical reference for every helper function, pattern, and convention
+Three instruction files control the workflow:
+- **`AGENTS.md`** — Mandatory interview process (9 questions) + build phases + rules
+- **`DOCX_BUILDER_REFERENCE.md`** — Complete DOCX helper reference (C.* and H.*)
+- **`PPTX_BUILDER_REFERENCE.md`** — Complete PPTX helper reference (C.* and H.*)
 
-Agents never touch `build.js` or `common.js` — they only write content modules and update `resource.config.json`.
-
-### Quick Start (manual)
+### Quick Start
 
 ```powershell
-npm install          # install the docx library (one time)
-# ... agent creates content/*.js files ...
-node build.js        # generate the .docx
+npm install              # one-time: installs docx + pptxgenjs
+# ... agent creates content modules ...
+node build.js            # generate .docx
+node build-pptx.js       # generate .pptx
+npm run build:pptx       # alias
 ```
 
 Output lands in `output/`.
@@ -119,48 +104,49 @@ Output lands in `output/`.
 
 ```
 resource_builder/
-├── build.js                    ← 🔒 Stable — the build pipeline (never edited)
-├── common.js                   ← 🔒 Stable — shared formatting & helpers
-├── resource.config.json        ← ✏️  Edit per resource (title, creator, filename, header, contentDir)
-├── content/                    ← ✏️  One subfolder per resource
-│   ├── electricity-unit-guide/ ←     Example: Year 9 Electricity
-│   │   ├── 01-cover.js
-│   │   └── 10-unit-guide.js
-│   ├── photosynthesis-worksheet/←    Another resource
-│   │   └── 01-worksheet.js
-│   └── arduino-booklet-week1/  ←     Another resource
-│       ├── 01-cover.js
-│       ├── 02-contents.js
-│       ├── 10-lesson1.js
-│       └── ...
-├── AGENTS.md                   ← 📖 Agent instructions (interview + build)
-├── DOCX_BUILDER_REFERENCE.md   ← 📖 Full technical reference
+├── build.js                    ← DOCX build pipeline (+ validation)
+├── build-pptx.js               ← PPTX build pipeline (+ validation)
+├── common.js                   ← DOCX shared helpers (C)
+├── common-pptx.js              ← PPTX shared helpers (C) + video download
+├── resource.config.json        ← Per-resource config
+├── content/                    ← Resource subfolders
+│   ├── series-circuits-e5-lesson/     ← PPTX: E5 lesson with video
+│   ├── series-circuits-worksheet/     ← DOCX: companion worksheet
+│   ├── dichotomous-key-e5-lesson/     ← PPTX: E5 lesson example
+│   ├── electronics-intro-pptx/        ← PPTX: standard lesson example
+│   ├── electronics-project-booklet/   ← DOCX: multi-lesson booklet
+│   ├── electricity-unit-guide/        ← DOCX: curriculum map
+│   ├── performance-styles-booklet/    ← DOCX: multi-lesson booklet
+│   ├── e5-voltage-lesson/             ← PPTX: E5 lesson example
+│   ├── circuit-components-worksheet/  ← DOCX: single worksheet
+│   ├── diseases-comparison-worksheet/ ← DOCX: comparison worksheet
+│   ├── images/                        ← Shared image files
+│   └── videos/                        ← Cached YouTube MP4s
+├── tools/
+│   └── yt-dlp.exe              ← YouTube downloader (one-time setup)
+├── AGENTS.md                   ← Agent instructions
+├── DOCX_BUILDER_REFERENCE.md   ← DOCX technical reference
+├── PPTX_BUILDER_REFERENCE.md   ← PPTX technical reference
+├── README.md                   ← This file
 ├── package.json
-└── output/                     ← Generated .docx files
+└── output/                     ← Generated .docx/.pptx files
 ```
 
 ---
 
-## 🧱 Built On
+## 🧱 Dependencies
 
-- **[`docx`](https://www.npmjs.com/package/docx)** — Pure JavaScript `.docx` generator (Office Open XML). No Microsoft Office, no LibreOffice, no external binaries needed. Works anywhere Node.js runs.
-- **Node.js** — Any recent version (14+).
-
----
-
-## 📋 Supported Subjects (for image sourcing)
-
-| Subject | Image Sources |
-|---|---|
-| Biology, Chemistry, Physics | OpenStax, PhET, Wikimedia Commons, PHIL (CDC) |
-| Mathematics | OpenStax, Wikimedia Commons, Desmos |
-| Computing / Electronics | Wikimedia Commons, Fritzing, Tinkercad |
-| History / Social Sciences | OpenStax, Wikimedia Commons, Library of Congress, David Rumsey Maps |
-| Geography / Earth Science | NASA Earth Observatory, USGS, Wikimedia Commons |
-| General (any subject) | OpenClipArt, The Noun Project, Pixabay |
+| Dependency | Purpose | Required? |
+|---|---|---|
+| [`docx`](https://www.npmjs.com/package/docx) | Pure JS `.docx` generator | ✅ For DOCX |
+| [`pptxgenjs`](https://www.npmjs.com/package/pptxgenjs) | Pure JS `.pptx` generator | ✅ For PPTX |
+| `yt-dlp.exe` (in `tools/`) | YouTube video downloader | ✅ For video embedding |
+| `ffmpeg` (system PATH or `tools/`) | Best-quality video encoding | ⚠️ Optional — fallback works without it |
+| Node.js 14+ | Runtime | ✅ |
 
 ---
 
 ## 📄 License
 
-This project is unlicensed. Use it to build whatever teaching resources you need.
+Unlicensed. Use it to build whatever teaching resources you need.
+
