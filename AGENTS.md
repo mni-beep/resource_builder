@@ -130,22 +130,33 @@ What format should the resource be?
 > | Evaluate | Red | ✅ | 1–2 | Check understanding, reflect, assess |
 
 **E5-specific follow-ups:**
-- Approximate slides per phase: Engage __ Explore __ Explain __ Elaborate __ Evaluate __
+- Slides per phase: Engage __ Explore __ Explain __ Elaborate __ Evaluate __ (defaults: 1/1/2/1/1 for Standard, 1/1/5/1/1 for Extended)
 - Should each phase have its own divider slide? [ ] Yes (recommended)  [ ] No
-- Should the Explore phase include a data collection table? [ ] Yes  [ ] No
-- Should the Evaluate phase include a self-assessment rubric? [ ] Yes  [ ] No
 
-> **🎬 Video placement in E5 decks:** Embedded YouTube videos should go **inside the Engage or Explore slide** (right column), NOT on a standalone slide. Pass `videoUrl` and `videoCaption` in the `engage` or `explore` plan object:
-> ```js
-> engage: {
->   heading: "...",
->   bodyText: [...],
->   videoUrl: "https://www.youtube.com/watch?v=REAL_ID",
->   videoCaption: "Channel — Title (X:XX)",
->   // ...
-> }
-> ```
-> The Engage/Explore slides auto-detect YouTube URLs, download via `yt-dlp`, and embed the MP4 in the right column. Video takes priority over `imagePath` or `mindMap`. See Step 3c for the full YouTube search procedure.
+**E5 lesson depth — how much content per phase?**
+- [ ] **Standard E5** (6–8 slides total) — one slide per phase: Learning Intention, Engage, Explore, Explain, Elaborate, Evaluate. Clean, concise, no extras.
+- [ ] **Extended E5** (12–20 slides total) — core vocabulary plus extra **theory detail slides**, **worked examples**, **now-you-try mirrored problems**, **comparison tables**, and **data-collection tables**, all integrated into their respective E5 phases (Explain extras go inside Explain, Explore tables inside Explore, etc.). Use this when you want deeper concept coverage.
+
+> **⚠️ CRITICAL: If Extended E5 is chosen, ALL extra content slides MUST be interleaved into the E5 phase sequence — NEVER appended at the end.** The slide order follows the E5 arc: Title → Objectives → Learning Intention → Engage → Explore (with any data table) → Explain (core vocab + any extra theory/worked-examples/now-you-try/comparison) → Elaborate → Evaluate → Summary.
+
+> **🎬 Videos, images & diagrams — contextual placement:** When the user requests videos and/or images, the agent should **contextually decide** what visual medium fits each slide best, rather than following a rigid rule. Use this decision guide:
+>
+> | Slide type | Best visual | Why |
+> |---|---|---|
+> | **Engage** | 🎬 Video (preferred) or 🖼️ image | Hooking curiosity — motion and narration work best. Fall back to a striking image if no good video exists. |
+> | **Explore** | 🎬 Video (preferred), 🖼️ image, or 🧠 mind map | Investigation — a hands-on demo video or a rich diagram sparks inquiry. A mind-map works for concept-mapping prompts. |
+> | **Explain** (core vocab) | 🖼️ Image or 📐 ASCII diagram | Explicit teaching — a labelled diagram or clear illustration supports definitions. Video is too passive here. |
+> | **Explain** (worked example) | 📐 ASCII diagram or none | Step-by-step reasoning — a small monospaced diagram of the circuit keeps focus on the working. |
+> | **Explain** (comparison) | 🖼️ Image or 📐 ASCII diagram | Side-by-side visuals help students compare at a glance. |
+> | **Elaborate** | None (worksheet-driven) | Students are working on the companion worksheet — no visual needed on the slide. |
+> | **Evaluate** | None | Exit ticket / self-assessment — visual would distract. |
+> | **Summary** | None | Bullet takeaway text is sufficient. |
+>
+> **Video embedding:** Pass `videoUrl` and `videoCaption` in the Engage or Explore `opts` object. The builder auto-downloads via `yt-dlp` and embeds the MP4 in the right column. Video takes priority over `imagePath` or `mindMap` on those slides.
+>
+> **Image embedding:** For Explain slides, pass `imagePath` to `e5ExplainSlide()` opts, or use `C.imageSlide()` for standalone image slides. Images must be fetched from the user's chosen sources (see Step 3b).
+>
+> **ASCII diagrams:** Use `C.diagramSlide()` with box-drawing characters in `font: "Consolas"` when no suitable image is available, or when a diagram would be clearer than a photograph. See Step 3c for the full YouTube search procedure.
 
 **For PPTX standard lesson decks:**
 - How many lessons does this cover? ___________
@@ -222,20 +233,18 @@ Ask the user:
 
 **If YES to either → branch into DOCX worksheet questioning:**
 
-> You are temporarily switching to the DOCX worksheet workflow. Answer these questions for the Elaborate companion worksheet, then return to the PPTX flow for Questions 6–9.
+> You are temporarily switching to the DOCX worksheet workflow. The question types for the companion worksheet are selected in **Question 5** (the same comprehensive checklist used for all DOCX resources). Do NOT show a separate, abbreviated checklist — use Question 5.
 
-Collect these details for the worksheet:
-- What should the worksheet include? (use the DOCX question mix checklist above)
-  - [ ] Fill-in tables / data recording sheets
-  - [ ] Step-by-step procedure with answer blanks
-  - [ ] Diagram annotation / labelling
-  - [ ] Short-answer reflection questions — how many? ___
-  - [ ] Create-your-own activity (e.g. "make your own dichotomous key")
-  - [ ] Peer review / swap-with-partner section
-- Scaffolding intensity (from Question 6):
+Collect these additional details for the worksheet:
+
+- **Question types to include** — taken from Question 5. Use the FULL checklist (all item types: fill-in tables, three-tier scaffolding, comparison questions, structured planning forms, hands-on demo activities, troubleshooting/fault-finding, teach-back, practical-on-paper, "now you try" mirrored problems, diagram labelling, short answer, extended response, peer review, plus any subject-specific extras like code-writing).
+
+> **⚠️ HARD RULE: EVERY question type the user checks in Question 5 MUST appear as a distinct activity or section in the companion worksheet.** Do not skip any checked type. Do not merge unrelated types into one activity. If the user checks 10 types, the worksheet must contain at least 10 corresponding activities or question blocks. The only exception is "code-writing by hand" for non-programming subjects — adapt it (e.g. circuit design, pseudocode, procedure writing) rather than omit it.
+
+- **Scaffolding intensity** (from Question 6):
   [ ] Heavy  [ ] Moderate  [ ] Light  [ ] Mix
-- Worksheet output filename: ___________
-- Should answers go in the PPTX speaker notes, the worksheet itself (hidden/separate section), or both?
+- **Worksheet output filename:** ___________
+- **Where should answers go?**
   [ ] Speaker notes only (teacher sees in Presenter View)
   [ ] Separate answer section in the worksheet
   [ ] Both
@@ -455,6 +464,8 @@ Use the helpers documented in `PPTX_BUILDER_REFERENCE.md`:
 
 If the user chose open-source images:
 
+> **Refer to the contextual placement guide above (E5 follow-ups section) to decide which slides need images vs videos vs ASCII diagrams vs nothing.**
+
 1. **Create a download folder:** `content/images/`
 2. **Fetch images** from the chosen sources (OpenStax, Wikimedia Commons, PhET, etc.). Verify each image's license is compatible (CC-BY, CC0, public domain).
 3. **Save locally** with descriptive filenames (e.g. `chloroplast_diagram.png`, `circuit_battery_led.png`).
@@ -486,7 +497,9 @@ C.p("Figure 1: Cross-section of a chloroplast showing thylakoid stacks (grana)."
 
 ### Step 3c: Handle YouTube videos (if user requested embedded videos in Question 8)
 
-When the user asks for embedded YouTube videos, you MUST search the web for relevant videos rather than use placeholder URLs. The procedure:
+When the user asks for embedded YouTube videos, you MUST search the web for relevant videos rather than use placeholder URLs. **Use the contextual placement guide above to determine which slides should get videos — typically Engage and Explore, not Explain or Evaluate.**
+
+The procedure:
 
 1. **Search YouTube via browser** — use the MCP browser tools (NOT `fetch_webpage` — YouTube blocks it):
    - Navigate to `https://www.youtube.com/results?search_query=YOUR+SEARCH+TERMS`
@@ -545,12 +558,14 @@ Tell the user:
 
 1. **Prefer not to edit `build.js`, `build-pptx.js`, `common.js`, or `common-pptx.js`.** They are infrastructure. However, when a bug in these files prevents correct output (e.g. API mismatches, rendering errors), you may fix them — keep changes minimal and targeted. Always explain the fix to the user.
 2. **NEVER skip Phase 1.** Even if the user's request seems specific, confirm with the interview questions.
-3. **ALWAYS numeric-prefix your content files.** Order matters.
-4. **ALWAYS use `C.*` and `H.*` helpers.** Do not construct raw `Paragraph`, `TableCell`, or pptxgenjs slide objects unless a custom case genuinely needs it.
-5. **ONE concept per content file.** Don't put multiple lessons in one file.
-6. **For DOCX:** Use `C.pageBreak()` between major sections (between lessons, between theory and questions, before reference material).
-7. **For PPTX:** Each slide definition object = one slide. Answers and teaching notes go into **speaker notes**, not separate files. Use `C.customSlide()` only as a last resort.
-8. **ALWAYS spread array-returning helpers.** Some `C.*` helpers return arrays, not single elements. You MUST spread them with `...` when pushing into your content array, or the DOCX/PPTX will silently corrupt. The builders will now detect and refuse to build if this happens, but the right fix is to spread them correctly from the start.
+3. **If the user leaves any field blank — fill it yourself.** Make the best choice for the context. Never halt the build or loop back to the user just because a field is empty. Output filenames, slide counts, analogies, colour schemes, image sizes — you decide. Only ask the user when the field is genuinely critical and you cannot infer a reasonable default.
+4. **ALWAYS numeric-prefix your content files.** Order matters.
+5. **ALWAYS use `C.*` and `H.*` helpers.** Do not construct raw `Paragraph`, `TableCell`, or pptxgenjs slide objects unless a custom case genuinely needs it.
+6. **ONE concept per content file.** Don't put multiple lessons in one file.
+7. **For DOCX:** Use `C.pageBreak()` between major sections (between lessons, between theory and questions, before reference material).
+8. **For PPTX:** Each slide definition object = one slide. Answers and teaching notes go into **speaker notes**, not separate files. Use `C.customSlide()` only as a last resort.
+9. **ALWAYS spread array-returning helpers.** Some `C.*` helpers return arrays, not single elements. You MUST spread them with `...` when pushing into your content array, or the DOCX/PPTX will silently corrupt. The builders will now detect and refuse to build if this happens, but the right fix is to spread them correctly from the start.
+10. **Every checked companion-worksheet type MUST appear as a distinct activity.** When the user selects question types for a companion DOCX worksheet, do not skip, merge, or drop any checked type. If 10 types are checked, the worksheet must have at least 10 corresponding activities. The only exception: adapt "code-writing by hand" to the subject (e.g. circuit design) rather than omit it.
 
    **DOCX helpers that return arrays (spread with `...`):**
    - `C.linedAnswerSpace(n)` → `content.push(...C.linedAnswerSpace(3))`

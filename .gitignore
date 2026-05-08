@@ -10,7 +10,17 @@ __v0_jsx-dev-runtime.ts
 .env*.local
 
 # Dependencies
-node_modules/
+
+
+# Build tools (large binaries)
+
+
+# Downloaded media (videos, images)
+content/videos/
+content/images/
+
+# Output files
+output/
 
 # Next.js / Vercel scaffolding (was added by v0, not part of the project)
 .next/
@@ -38,3 +48,6 @@ output/
 content/videos/
 content/
 .vscode/
+
+.playwright-mcp/
+resource.config.json

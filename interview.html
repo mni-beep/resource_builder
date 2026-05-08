@@ -230,8 +230,18 @@
     <label><input type="checkbox" id="q4e-objectives" checked> Learning objectives slide</label>
     <label><input type="checkbox" id="q4e-summary" checked> Summary slide</label>
     <label><input type="checkbox" id="q4e-dividers" checked> Phase divider slides</label>
-    <label><input type="checkbox" id="q4e-explore-table"> Explore phase — data collection table</label>
-    <label><input type="checkbox" id="q4e-eval-rubric" checked> Evaluate phase — self-assessment rubric</label>
+  </div>
+  <div class="options" style="margin-top:12px">
+    <div class="option"><input type="radio" name="q4e-depth" id="q4e-depth-std" value="standard" checked onchange="updateVisibility()"><label for="q4e-depth-std"><strong>Standard E5</strong> — 1 slide per phase (6–8 slides total). Clean, concise.</label></div>
+    <div class="option"><input type="radio" name="q4e-depth" id="q4e-depth-ext" value="extended" onchange="updateVisibility()"><label for="q4e-depth-ext"><strong>Extended E5</strong> — extra theory slides, worked examples, now-you-try, comparison tables integrated into phases (12–20 slides). Deeper concept coverage.</label></div>
+  </div>
+  <div class="field-row" style="margin-top:8px" id="row-q4e-phase-slides">
+    <div class="field" style="flex:1"><label>Engage</label><input type="number" id="q4e-ph-engage" min="1" max="4" value="1" style="width:50px"></div>
+    <div class="field" style="flex:1"><label>Explore</label><input type="number" id="q4e-ph-explore" min="1" max="4" value="1" style="width:50px"></div>
+    <div class="field" style="flex:1"><label>Explain</label><input type="number" id="q4e-ph-explain" min="1" max="10" value="2" style="width:50px"></div>
+    <div class="field" style="flex:1"><label>Elaborate</label><input type="number" id="q4e-ph-elaborate" min="1" max="4" value="1" style="width:50px"></div>
+    <div class="field" style="flex:1"><label>Evaluate</label><input type="number" id="q4e-ph-evaluate" min="1" max="4" value="1" style="width:50px"></div>
+    <span style="color:#808080; font-size:11px; margin-top:4px">slides per phase</span>
   </div>
   <div class="options" style="margin-top:8px">
     <div class="option"><input type="radio" name="q4e-format" id="q4e-wide" value="widescreen" checked><label for="q4e-wide">Widescreen 16:9</label></div>
@@ -245,12 +255,7 @@
       <div class="option"><input type="radio" name="q4e-ws" id="q4e-ws-no" value="no" onchange="updateVisibility()"><label for="q4e-ws-no">No — slide activities only</label></div>
     </div>
     <div id="sec-q4-eworksheet-details">
-      <div class="checklist" style="margin-top:10px">
-        <label><input type="checkbox" id="q4ews-diagram"> Diagram annotation / labelling</label>
-        <label><input type="checkbox" id="q4ews-short"> Short answer questions</label>
-        <label><input type="checkbox" id="q4ews-extended"> Extended response</label>
-        <label><input type="checkbox" id="q4ews-peer"> Swap with partner / peer review</label>
-      </div>
+      <p style="color:#2B579A; font-size:13px; margin:10px 0">→ Select question types in <strong>Question 5</strong> below. Every checked type will be built into the worksheet.</p>
       <div class="field"><label>Worksheet output filename</label><input type="text" id="q4ews-file" placeholder="resource-worksheet.docx"></div>
       <div class="options" style="margin-top:8px">
         <div class="option"><input type="radio" name="q4ews-ans" id="q4ews-ans-spkr" value="speaker" checked><label for="q4ews-ans-spkr">Answers in speaker notes</label></div>
@@ -285,13 +290,7 @@
       <div class="option"><input type="radio" name="q4s-ws" id="q4s-ws-no" value="no" checked onchange="updateVisibility()"><label for="q4s-ws-no">No</label></div>
     </div>
     <div id="sec-q4-sworksheet-details">
-      <div class="checklist" style="margin-top:10px">
-        <label><input type="checkbox" id="q4sws-diagram"> Diagram annotation / labelling</label>
-        <label><input type="checkbox" id="q4sws-short"> Short answer questions</label>
-        <label><input type="checkbox" id="q4sws-extended"> Extended response</label>
-        <label><input type="checkbox" id="q4sws-peer"> Swap with partner / peer review</label>
-        <label><input type="checkbox" id="q4sws-filltable"> Fill-in tables</label>
-      </div>
+      <p style="color:#2B579A; font-size:13px; margin:10px 0">→ Select question types in <strong>Question 5</strong> below. Every checked type will be built into the worksheet.</p>
       <div class="field"><label>Worksheet output filename</label><input type="text" id="q4sws-file" placeholder="resource-worksheet.docx"></div>
       <div class="options" style="margin-top:8px">
         <div class="option"><input type="radio" name="q4sws-ans" id="q4sws-ans-spkr" value="speaker" checked><label for="q4sws-ans-spkr">Answers in speaker notes</label></div>
@@ -344,17 +343,20 @@
     <div class="field"><label>Worked examples — how many?</label><input type="number" id="q5-we" min="0" value="2"></div>
   </div>
   <div class="checklist" style="margin-top:10px">
+    <label><input type="checkbox" id="q5-diagram"> Diagram annotation / labelling</label>
     <label><input type="checkbox" id="q5-filltable"> Fill-in tables / diagrams</label>
     <label><input type="checkbox" id="q5-scaffold"> Three-tier scaffolding tables</label>
-    <label><input type="checkbox" id="q5-compare"> Comparison questions</label>
+    <label><input type="checkbox" id="q5-compare"> Comparison questions (side-by-side)</label>
     <label><input type="checkbox" id="q5-planner"> Structured planning forms</label>
-    <label><input type="checkbox" id="q5-demo"> Hands-on demo activities</label>
+    <label><input type="checkbox" id="q5-demo"> Hands-on demo activities + reflection</label>
     <label><input type="checkbox" id="q5-trouble"> Troubleshooting / fault-finding</label>
     <label><input type="checkbox" id="q5-teachback"> Teach-back / explain-to-others</label>
     <label><input type="checkbox" id="q5-practical"> Practical-on-paper activities</label>
-    <label><input type="checkbox" id="q5-code"> Code-writing by hand</label>
+    <label><input type="checkbox" id="q5-code"> Code-writing by hand (circuit design, pseudocode, etc.)</label>
     <label><input type="checkbox" id="q5-nowtry"> "Now you try" mirrored problems</label>
+    <label><input type="checkbox" id="q5-peer"> Swap with partner / peer review</label>
   </div>
+  <p style="color:#C00000; font-size:12px; font-style:italic; margin-top:8px">⚠️ For companion worksheets: every checked type MUST appear as a distinct activity in the worksheet.</p>
 </div>
 
 <!-- ============================================ -->
@@ -430,6 +432,7 @@
 <div class="btn-row" id="btn-row">
   <button class="btn btn-primary" onclick="generatePrompt()">✨ Generate Prompt</button>
   <button class="btn btn-secondary" onclick="resetForm()">🔄 Reset</button>
+  <span style="margin-left:16px; color:#808080; font-size:13px; font-style:italic">Blank fields = agent chooses the best default for your context</span>
 </div>
 
 <!-- ============================================ -->
@@ -505,6 +508,25 @@ function updateVisibility() {
   const e5wsYes = isPptx && isE5 && qval('q4e-ws') === 'yes';
   showIf('sec-q4-eworksheet-details', e5wsYes);
 
+  // E5 depth — set per-phase slide defaults when toggle changes
+  const e5Depth = qval('q4e-depth');
+  if (isPptx && isE5) {
+    if (e5Depth === 'extended') {
+      // Only bump defaults if user hasn't changed them from standard values
+      setIfDefault('q4e-ph-engage', 1, 1);
+      setIfDefault('q4e-ph-explore', 1, 1);
+      setIfDefault('q4e-ph-explain', 2, 5);
+      setIfDefault('q4e-ph-elaborate', 1, 1);
+      setIfDefault('q4e-ph-evaluate', 1, 1);
+    } else {
+      setIfDefault('q4e-ph-engage', 1, 1);
+      setIfDefault('q4e-ph-explore', 1, 1);
+      setIfDefault('q4e-ph-explain', 5, 2);
+      setIfDefault('q4e-ph-elaborate', 1, 1);
+      setIfDefault('q4e-ph-evaluate', 1, 1);
+    }
+  }
+
   // Standard PPTX worksheet details
   const stdWsYes = isPptx && isStandardPptx && qval('q4s-ws') === 'yes';
   showIf('sec-q4-sworksheet-details', stdWsYes);
@@ -561,10 +583,18 @@ document.getElementById('q4b-lpw')?.addEventListener('input', updateVisibility);
 // ============================================================
 function v(id, fallback) {
   const el = document.getElementById(id);
-  if (!el) return fallback || '';
+  if (!el) return fallback || '[Agent choice]';
   if (el.type === 'checkbox') return el.checked ? 'Yes' : 'No';
-  if (el.type === 'radio') return document.querySelector(`input[name="${el.name}"]:checked`)?.value || fallback || '';
-  return el.value || fallback || '';
+  if (el.type === 'radio') return document.querySelector(`input[name="${el.name}"]:checked`)?.value || fallback || '[Agent choice]';
+  return el.value || fallback || '[Agent choice]';
+}
+
+/** Set an input's value only if its current value equals oldDefault */
+function setIfDefault(id, oldDefault, newValue) {
+  const el = document.getElementById(id);
+  if (el && String(el.value) === String(oldDefault)) {
+    el.value = newValue;
+  }
 }
 
 function checkedIds(prefix) {
@@ -597,7 +627,7 @@ function generatePrompt() {
   lines.push(`Resource type: ${rt || 'Other (see details below)'}`);
 
   // Q2
-  lines.push(`Subject: ${v('q2-subject', '[Specify]')}`);
+  lines.push(`Subject: ${v('q2-subject', '[Agent choice]')}`);
   const topics = v('q2-topics');
   if (topics) topics.split('\n').forEach(t => { if (t.trim()) lines.push(`  Topic: ${t.trim()}`); });
 
@@ -627,20 +657,22 @@ function generatePrompt() {
   if (isPptx && q1p === 'e5') {
     q4details.push(`  Lessons: ${v('q4e-lessons')}, Slides: ${v('q4e-slides')}`);
     q4details.push(`  Title: ${v('q4e-title')}, Objectives: ${v('q4e-objectives')}, Summary: ${v('q4e-summary')}, Dividers: ${v('q4e-dividers')}`);
-    q4details.push(`  Explore table: ${v('q4e-explore-table')}, Eval rubric: ${v('q4e-eval-rubric')}`);
     q4details.push(`  Format: ${qval('q4e-format')}`);
+    q4details.push(`  E5 depth: ${qval('q4e-depth') === 'extended' ? 'Extended (extra theory, worked examples, now-you-try, comparison)' : 'Standard (1 slide per phase)'}`);
+    q4details.push(`  Slides per phase: Engage ${v('q4e-ph-engage','1')}, Explore ${v('q4e-ph-explore','1')}, Explain ${v('q4e-ph-explain','2')}, Elaborate ${v('q4e-ph-elaborate','1')}, Evaluate ${v('q4e-ph-evaluate','1')}`);
     if (qval('q4e-ws') === 'yes') {
-      const wsItems = checkedIds('q4ews-').filter(x => x && !x.includes('Yes') && !x.includes('No'));
-      q4details.push(`  Companion worksheet: Yes — ${wsItems.join(', ') || 'see details'}`);
+      const wsItems = checkedIds('q5-');
+      q4details.push(`  Companion worksheet: Yes — ${wsItems.join(', ') || 'see Question 5'}`);
       q4details.push(`  Worksheet file: ${v('q4ews-file')}, Answers: ${qval('q4ews-ans')}`);
+      if (wsItems.length > 0) q4details.push('  ⚠️ HARD RULE: EVERY checked worksheet type MUST appear as a distinct activity in the worksheet.');
     }
   }
   if (isPptx && q1p === 'standard') {
     q4details.push(`  Lessons: ${v('q4s-lessons')}, Slides: ${v('q4s-slides')}`);
     q4details.push(`  Title: ${v('q4s-title')}, Objectives: ${v('q4s-objectives')}, Summary: ${v('q4s-summary')}, Format: ${qval('q4s-format')}`);
     if (qval('q4s-ws') === 'yes') {
-      const wsItems = checkedIds('q4sws-').filter(x => x && !x.includes('Yes') && !x.includes('No'));
-      q4details.push(`  Companion worksheet: Yes — ${wsItems.join(', ') || 'see details'}`);
+      const wsItems = checkedIds('q5-');
+      q4details.push(`  Companion worksheet: Yes — ${wsItems.join(', ') || 'see Question 5'}`);
       q4details.push(`  Worksheet file: ${v('q4sws-file')}, Answers: ${qval('q4sws-ans')}`);
     }
   }
@@ -667,8 +699,8 @@ function generatePrompt() {
   if (q6val) lines.push(`Scaffolding: ${q6val}`);
 
   // Q7
-  lines.push(`Output file: ${v('q7-file', '[Specify]')}`);
-  if (isDocx) lines.push(`Header text: ${v('q7-header', '[Specify]')}`);
+  lines.push(`Output file: ${v('q7-file', '[Agent choice]')}`);
+  if (isDocx) lines.push(`Header text: ${v('q7-header', '[Agent choice]')}`);
   lines.push(`Author: ${v('q7-author')}`);
 
   // Q8
