@@ -37,5 +37,4 @@ output/
 # Videos (cached YouTube downloads)
 content/videos/
 content/
-.gitignore
 .vscode/
