@@ -86,6 +86,8 @@ Three instruction files control the workflow:
 - **`DOCX_BUILDER_REFERENCE.md`** — Complete DOCX helper reference (C.* and H.*)
 - **`PPTX_BUILDER_REFERENCE.md`** — Complete PPTX helper reference (C.* and H.*)
 
+Users can also fill out **`interview.html`** (open in any browser) to generate a ready-to-use prompt — no manual Q&A needed.
+
 ### Quick Start
 
 ```powershell
@@ -97,6 +99,18 @@ npm run build:pptx       # alias
 ```
 
 Output lands in `output/`.
+
+### 🌐 Web Interview Tool
+
+Open `interview.html` in any browser for a guided form that mirrors the AGENTS.md interview:
+
+- **Branching logic** — shows/hides questions based on earlier answers (DOCX vs PPTX → resource type → structure sub-questions)
+- **Companion worksheet toggles** — for both E5 and standard PPTX lessons
+- **One-click prompt generation** — compiles all answers into a structured prompt ready to paste to the AI agent
+- **Copy to clipboard** — single click to grab the prompt
+- **Reset button** — clears everything back to defaults
+
+No server, no build step — just open the file.
 
 ---
 
@@ -127,6 +141,7 @@ resource_builder/
 ├── AGENTS.md                   ← Agent instructions
 ├── DOCX_BUILDER_REFERENCE.md   ← DOCX technical reference
 ├── PPTX_BUILDER_REFERENCE.md   ← PPTX technical reference
+├── interview.html              ← Web-based interview form
 ├── README.md                   ← This file
 ├── package.json
 └── output/                     ← Generated .docx/.pptx files

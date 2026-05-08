@@ -174,8 +174,8 @@ What format should the resource be?
 
 ### Question 5: WORKSHEETS & QUESTION MIX
 
-> **This section is for DOCX resources AND for PPTX E5 Elaborate companion worksheets.**
-> **Skip the detailed question-types checklist for standard PPTX lesson/revision decks** — in PPTX, questions are individual slides (MC → `C.mcQuestionSlide()`, short answer → `C.shortAnswerSlide()`, extended response → `C.extendedResponseSlide()`), and the number of each was covered in Question 4. For PPTX, use the abbreviated E5 Elaborate worksheet section below instead.
+> **This section is for DOCX resources AND for companion DOCX worksheets (E5 Elaborate or standard PPTX lesson).**
+> **Skip the detailed question-types checklist for PPTX slide-deck questions** — in PPTX, questions are individual slides (MC → `C.mcQuestionSlide()`, short answer → `C.shortAnswerSlide()`, extended response → `C.extendedResponseSlide()`), and the number of each was covered in Question 4. This section is for companion DOCX worksheets only.
 
 **For DOCX resources (worksheets, booklets, assessments):**
 
@@ -211,7 +211,16 @@ Ask the user:
   [ ] **Yes — build a separate worksheet** (the PPTX slides guide the activity; the worksheet records answers)
   [ ] **No — use slide-level activities only** (fill-in tables, checklists, prompts on slides)
 
-**If YES → branch into DOCX worksheet questioning:**
+**For PPTX standard lesson decks — companion worksheet (ask if standard lesson was chosen):**
+
+> Standard lessons can also have a companion DOCX worksheet for practice questions, activities, or note-taking. This is separate from the slide-based questions — the worksheet is a printed handout.
+
+Ask the user:
+- Would you like a **companion DOCX worksheet** to accompany the standard lesson?
+  [ ] **Yes — build a separate worksheet** (printed handout with questions/activities)
+  [ ] **No — slides only**
+
+**If YES to either → branch into DOCX worksheet questioning:**
 
 > You are temporarily switching to the DOCX worksheet workflow. Answer these questions for the Elaborate companion worksheet, then return to the PPTX flow for Questions 6–9.
 
