@@ -1,8 +1,8 @@
 {
   "type": "pptx",
-  "title": "Parallel Circuits — Year 9 Science",
+  "title": "Exploring the 5 Kingdoms of Life — Year 7 Science",
   "creator": "Science Department",
-  "outputFile": "./output/parallel-circuits-e5-lesson.pptx",
-  "contentDir": "./content/parallel-circuits-e5-lesson",
+  "outputFile": "./output/5-kingdoms-e5-lesson.pptx",
+  "contentDir": "./content/5-kingdoms-e5-lesson",
   "landscape": true
 }

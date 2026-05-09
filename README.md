@@ -60,6 +60,13 @@ Fill in the form, copy the generated prompt at the end, and paste it into your A
 - **🖼️ Open-source images** — Auto-resolved from `content/images/` with figure captions
 - **Companion worksheets** — E5 Elaborate phase can pair with a DOCX worksheet (activities + peer review + answer key)
 
+### Image Acquisition
+- **Unified image downloader** — `tools/download_image.py` is the single entrypoint for direct image URLs and page scraping
+- **Browser-assisted fallback** — `tools/browser_image_helper.cjs` renders JS-heavy pages with Playwright and downloads the best visible candidate when static scraping is not enough
+- **Source-aware routing** — Handles direct URLs, Wikimedia Commons, OpenClipart, PHIL/CDC, OpenStax, Pixabay, NASA, and similar sources without switching workflows
+- **Safer downloads** — Rejects HTML masquerading as image files, keeps browser-like headers, and uses screenshot fallback for canvas/SPA cases such as Desmos
+- **Known limits** — Cloudflare/authenticated sources such as Library of Congress, David Rumsey, and most Fritzing/Tinkercad project links still require manual capture
+
 ### YouTube Video Pipeline 🎬
 
 | Step | What happens |
@@ -99,7 +106,8 @@ Three instruction files control the workflow:
 ### Quick Start
 
 ```powershell
-npm install              # one-time: installs docx + pptxgenjs
+npm install              # one-time: installs project dependencies, including Playwright
+npx playwright install chromium   # one-time: enables browser-backed image extraction
 # ... agent creates content modules ...
 node build.js            # generate .docx
 node build-pptx.js       # generate .pptx
@@ -133,6 +141,8 @@ resource_builder/
 │   ├── images/                        ← Shared image files
 │   └── videos/                        ← Cached YouTube MP4s
 ├── tools/
+│   ├── browser_image_helper.cjs ← Playwright helper for JS-rendered image extraction
+│   ├── download_image.py        ← Unified image downloader / scraper entrypoint
 │   └── yt-dlp.exe              ← YouTube downloader (one-time setup)
 ├── AGENTS.md                   ← Agent instructions
 ├── DOCX_BUILDER_REFERENCE.md   ← DOCX technical reference
@@ -150,9 +160,11 @@ resource_builder/
 |---|---|---|
 | [`docx`](https://www.npmjs.com/package/docx) | Pure JS `.docx` generator | ✅ For DOCX |
 | [`pptxgenjs`](https://www.npmjs.com/package/pptxgenjs) | Pure JS `.pptx` generator | ✅ For PPTX |
+| [`playwright`](https://www.npmjs.com/package/playwright) | Browser-rendered image extraction for JS-heavy sources | ⚠️ Needed for automated web image capture |
+| Python + `requests` + `beautifulsoup4` | Unified image downloader and source-specific scraping | ⚠️ Needed for automated web image capture |
 | `yt-dlp.exe` (in `tools/`) | YouTube video downloader | ✅ For video embedding |
 | `ffmpeg` (system PATH or `tools/`) | Best-quality video encoding | ⚠️ Optional — fallback works without it |
-| Node.js 14+ | Runtime | ✅ |
+| Node.js 18+ | Runtime | ✅ |
 
 ---
 

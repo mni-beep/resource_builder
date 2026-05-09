@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.js",
     "build:pptx": "node build-pptx.js",
-    "build:week1": "node buildweek1.js"
+    "build:week1": "node buildweek1.js",
+    "image:browser": "node tools/browser_image_helper.cjs"
   },
   "keywords": [
     "docx",
@@ -17,6 +18,13 @@
   "license": "UNLICENSED",
   "dependencies": {
     "docx": "^9.0.0",
-    "pptxgenjs": "^4.0.1"
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-icons": "^5.6.0",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "playwright": "^1.54.1"
   }
 }

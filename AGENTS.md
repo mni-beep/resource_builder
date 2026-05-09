@@ -139,6 +139,24 @@ What format should the resource be?
 
 > **⚠️ CRITICAL: If Extended E5 is chosen, ALL extra content slides MUST be interleaved into the E5 phase sequence — NEVER appended at the end.** The slide order follows the E5 arc: Title → Objectives → Learning Intention → Engage → Explore (with any data table) → Explain (core vocab + any extra theory/worked-examples/now-you-try/comparison) → Elaborate → Evaluate → Summary.
 
+> **🔧 E5 Continuation Slides for multi-slide phases:** When a phase has more than 1 slide (e.g. Engage 2, Explore 2, Explain 2), every slide AFTER the first must carry the same E5 chrome (skill label, phase button, SM bar) so students always know which phase they're in. Use `C.e5ContinuationSlide(skillLabel, phaseName, smText, title, bullets, opts)` for these follow-on slides. It supports:
+> - **Bullet mode:** Pass `bullets` as an array (like `C.contentSlide()`)
+> - **Table mode:** Pass `null` for bullets and include `opts.table = { headers[], rows[][], colWidths[]? }`
+> - **Icons & shadows:** Pass `opts.iconName` (e.g. `"bulb"`, `"search"`) for a pre-rendered SVG icon beside the heading, and the body gets a subtle card shadow automatically
+> - **Phase-aware colours:** The phase button and SM bar automatically match the phase (orange=Engage, teal=Explore, blue=Explain, purple=Elaborate, red=Evaluate)
+>
+> **Never use `C.contentSlide()` or `C.tableSlide()` for the second+ slide in a multi-slide phase** — these lack E5 chrome and will look disconnected from the phase.
+
+> **🎨 Rich visual style in E5 slides:** When the user selects **Rich / modern** visual style (Question 4, PPTX section), all E5 slides automatically use the enhanced palette:
+> - Phase buttons and SM bars are **phase-coloured** (not flat red/green)
+> - Headings use **navy (#0F2A47)** for professional contrast
+> - Callout boxes echo the **phase tint colour**
+> - Content cards get a **subtle shadow** (`E5_THEME.cardShadow`)
+> - SVG **icons** from the pre-rendered set can be used via `opts.iconName`
+> - The Learning Intention slide uses **navy/cyan accents** instead of red/green
+>
+> The rich styling is **automatic** — content modules don't need to enable it. Just select "Rich / modern" in the interview and the E5 render helpers apply it.
+
 > **🎬 Videos, images & diagrams — contextual placement:** When the user requests videos and/or images, the agent should **contextually decide** what visual medium fits each slide best, rather than following a rigid rule. Use this decision guide:
 >
 > | Slide type | Best visual | Why |
@@ -151,6 +169,8 @@ What format should the resource be?
 > | **Elaborate** | None (worksheet-driven) | Students are working on the companion worksheet — no visual needed on the slide. |
 > | **Evaluate** | None | Exit ticket / self-assessment — visual would distract. |
 > | **Summary** | None | Bullet takeaway text is sufficient. |
+>
+> **⚠️ HARD RULE — Images vs Videos:** If the user checked open-source images in Question 8 but did NOT request/specify videos, use IMAGES on Engage and Explore slides (not videos). Only use `videoUrl` when the user explicitly checked or requested video content. The `imagePath` parameter on `C.e5EngageSlide()` and `C.e5ExploreSlide()` is the correct way to embed visuals when images are the selected medium.
 >
 > **Video embedding:** Pass `videoUrl` and `videoCaption` in the Engage or Explore `opts` object. The builder auto-downloads via `yt-dlp` and embeds the MP4 in the right column. Video takes priority over `imagePath` or `mindMap` on those slides.
 >
@@ -165,6 +185,19 @@ What format should the resource be?
 - Should each lesson end with a summary slide? [ ] Yes  [ ] No
 - Should it have a title slide? [ ] Yes  [ ] No
 - Slide format: [ ] Widescreen 16:9 (default)  [ ] Standard 4:3
+
+**For ALL PPTX resource types — VISUAL STYLE:**
+
+Ask the user which visual style they prefer for the deck:
+- [ ] **Rich / modern** (recommended) — dark navy cover slides with grid pattern, card-based layouts with shadows, cyan/amber accent colours, SVG icons, roadmaps for multi-lesson overviews, numbered intent cards, visual MCQ cards. Uses the full Claude-inspired design system. Best for student-facing lessons.
+- [ ] **Clean / traditional** — blue header bars, simple bullet lists, classic worked example slides. Lighter, faster to author. Best for quick presentations or staff-facing decks.
+- [ ] **Mixed** — use rich title/overview/wrap-up slides but keep body content in traditional bullet style. Good balance.
+
+> **If rich/modern is chosen:** The agent should use `C.lessonTitleSlide()`, `C.roadmapSlide()`, `C.numberedIntentsSlide()`, `C.comparisonColumnsSlide()`, `C.mcqCardSlide()`, `C.processStepsSlide()`, `C.stepStripSlide()`, `C.taskCardsSlide()`, `C.keyIdeaSlide()`, and `C.wrapUpSlide()` wherever applicable. Cards get `C.softShadow()`. Icons from the pre-rendered set (19 icons) can be referenced by name via `C.icon("name")`.
+>
+> **If traditional is chosen:** Use the original helpers: `C.titleSlide()`, `C.contentSlide()`, `C.mcQuestionSlide()`, `C.workedExampleSlide()`, `C.comparisonSlide()`, etc.
+>
+> **If mixed is chosen:** Use rich helpers for structural slides (title, roadmap, wrap-up) and traditional helpers for body content.
 
 **For PPTX revision decks:**
 - How many topics to cover? ___________
@@ -221,6 +254,7 @@ Ask the user:
 - Would you like a **companion DOCX worksheet** for the Elaborate phase?
   [ ] **Yes — build a separate worksheet** (the PPTX slides guide the activity; the worksheet records answers)
   [ ] **No — use slide-level activities only** (fill-in tables, checklists, prompts on slides)
+  [ ] **No — no slide activities** (theory and worked examples only, no student tasks)
 
 **For PPTX standard lesson decks — companion worksheet (ask if standard lesson was chosen):**
 
@@ -229,13 +263,18 @@ Ask the user:
 Ask the user:
 - Would you like a **companion DOCX worksheet** to accompany the standard lesson?
   [ ] **Yes — build a separate worksheet** (printed handout with questions/activities)
-  [ ] **No — slides only**
+  [ ] **No — slide activities only** (fill-in tables, checklists, prompts on slides)
+  [ ] **No — no slide activities** (theory and worked examples only, no student tasks)
 
-**If YES to either → branch into DOCX worksheet questioning:**
+**If YES → branch into DOCX worksheet questioning (Question 5):**
 
 > You are temporarily switching to the DOCX worksheet workflow. The question types for the companion worksheet are selected in **Question 5** (the same comprehensive checklist used for all DOCX resources). Do NOT show a separate, abbreviated checklist — use Question 5.
 
-Collect these additional details for the worksheet:
+**If "slide activities only" →** build activities directly into the slides (fill-in tables, checklists, prompts, data-collection tables). Do NOT create a separate DOCX file. Skip Question 5 and the worksheet output filename fields.
+
+**If "no slide activities" →** the lesson is theory and worked examples only. Skip Question 5 entirely. No student tasks, no companion worksheet, no activity slides.
+
+Collect these additional details for the worksheet (YES path only):
 
 - **Question types to include** — taken from Question 5. Use the FULL checklist (all item types: fill-in tables, three-tier scaffolding, comparison questions, structured planning forms, hands-on demo activities, troubleshooting/fault-finding, teach-back, practical-on-paper, "now you try" mirrored problems, diagram labelling, short answer, extended response, peer review, plus any subject-specific extras like code-writing).
 
@@ -257,7 +296,7 @@ Collect these additional details for the worksheet:
 
 ### Question 6: SCAFFOLDING INTENSITY (ask for worksheets, booklets)
 
-> **Skip for assessments and unit guides** (assessments have no scaffolding by default; unit guides are teacher planning documents).
+> **Skip for:** assessments, unit guides (assessment scaffolding not applicable; unit guides are teacher planning documents), and PPTX decks where the user chose **"No — no slide activities"** (no tasks to scaffold).
 
 How much support baked in?
 - [ ] Heavy — sentence starters, planning steps, hints pointing to exact answers, hidden answers under every "try it"
@@ -284,37 +323,42 @@ How much support baked in?
 
 **If images are requested**, ask which sources they prefer:
 
+> **🟢 = automated via `python tools/download_image.py --scrape ...`**
+> **🟡 = automated, but may need article-specific tuning or may return the nearest live image after redirects**
+> **🟠 = automated screenshot fallback**
+> **🔴 = manual only**
+
 **Science (Biology, Chemistry, Physics, Earth Science):**
-- [ ] OpenStax — https://openstax.org (free textbooks, CC-BY, high-quality diagrams)
-- [ ] PhET Interactive Simulations — https://phet.colorado.edu (screenshots of sims, CC-BY)
-- [ ] Wikimedia Commons — https://commons.wikimedia.org (search by topic, check individual license)
-- [ ] Public Health Image Library (PHIL) — https://phil.cdc.gov (medical/microbiology)
+- [ ] 🟢 OpenStax — https://openstax.org (browser-rendered figures via Playwright fallback)
+- [ ] 🟢 PhET Interactive Simulations — https://phet.colorado.edu (`--scrape` works, gets sim screenshot via og:image)
+- [ ] 🟢 Wikimedia Commons — https://commons.wikimedia.org (`--scrape` works, gets og:image thumbnail)
+- [ ] 🟢 Public Health Image Library (PHIL) — https://phil.cdc.gov (use direct URL: `phil/PHIL_Images/{pid}/{pid}_lores.jpg`)
 
 **Mathematics:**
-- [ ] OpenStax — https://openstax.org (free math textbooks, CC-BY)
-- [ ] Wikimedia Commons — https://commons.wikimedia.org (graphs, geometric diagrams)
-- [ ] Desmos — https://www.desmos.com (screenshots of graphs, free to use educationally)
+- [ ] 🟢 OpenStax — https://openstax.org (browser-rendered figures via Playwright fallback)
+- [ ] 🟢 Wikimedia Commons — https://commons.wikimedia.org (`--scrape` works)
+- [ ] 🟠 Desmos — https://www.desmos.com (interactive SPA, automated screenshot fallback)
 
 **Computing / Technology:**
-- [ ] Wikimedia Commons — https://commons.wikimedia.org (circuit diagrams, logic gates, hardware photos)
-- [ ] Fritzing — https://fritzing.org (breadboard/circuit diagrams, CC-BY-SA)
-- [ ] Tinkercad — https://www.tinkercad.com (screenshots of circuits, educational use)
+- [ ] 🟢 Wikimedia Commons — https://commons.wikimedia.org (`--scrape` works)
+- [ ] 🔴 Fritzing — https://fritzing.org (requires authenticated session; manual export recommended)
+- [ ] 🔴 Tinkercad — https://www.tinkercad.com (public URLs often redirect to 404/login; manual export recommended)
 
 **Humanities / Social Sciences:**
-- [ ] OpenStax — https://openstax.org (free textbooks, CC-BY)
-- [ ] Wikimedia Commons — https://commons.wikimedia.org (historical maps, primary sources)
-- [ ] Library of Congress — https://www.loc.gov (public domain historical materials)
-- [ ] David Rumsey Map Collection — https://www.davidrumsey.com (historical maps, CC-BY-NC-SA)
+- [ ] 🟢 OpenStax — https://openstax.org (browser-rendered figures via Playwright fallback)
+- [ ] 🟢 Wikimedia Commons — https://commons.wikimedia.org (`--scrape` works)
+- [ ] 🔴 Library of Congress — https://www.loc.gov (Cloudflare challenge blocks automation; manual download required)
+- [ ] 🔴 David Rumsey Map Collection — https://www.davidrumsey.com (Cloudflare "Verify Access" wall; manual access only)
 
 **Geography / Earth Science:**
-- [ ] NASA Earth Observatory — https://earthobservatory.nasa.gov (satellite imagery, public domain)
-- [ ] USGS — https://www.usgs.gov (geological diagrams, public domain)
-- [ ] Wikimedia Commons — https://commons.wikimedia.org
+- [ ] 🟡 NASA Earth Observatory — https://earthobservatory.nasa.gov (browser-rendered fallback works, but old article links may redirect to the current EO landing page)
+- [ ] 🟢 USGS — https://www.usgs.gov (`--scrape` works, finds og:image)
+- [ ] 🟢 Wikimedia Commons — https://commons.wikimedia.org (`--scrape` works)
 
 **General (all subjects):**
-- [ ] OpenClipArt — https://openclipart.org (public domain clip art)
-- [ ] The Noun Project — https://thenounproject.com (icons, check individual license)
-- [ ] Pixabay — https://pixabay.com (photos and illustrations, free use)
+- [ ] 🟢 OpenClipArt — https://openclipart.org (`--scrape` works, finds PNG download URL)
+- [ ] 🟢 The Noun Project — https://thenounproject.com (`--scrape` works, finds icon PNG via og:image)
+- [ ] 🟢 Pixabay — https://pixabay.com (browser-rendered extraction + built-in `curl.exe` CDN fallback)
 - [ ] Other source (specify): ___________
 
 **Image usage notes:**
@@ -445,18 +489,56 @@ module.exports = function sectionName(C, H) {
 ```
 
 Use the helpers documented in `PPTX_BUILDER_REFERENCE.md`:
-- `C.titleSlide()`, `C.sectionDivider()` — structural slides
+
+**Structural / framing slides:**
+- `C.titleSlide()`, `C.sectionDivider()` — basic structural slides
+- `C.lessonTitleSlide()` — 🆕 dark navy cover with decorative grid, lesson chip, hook text (Claude-inspired)
 - `C.objectivesSlide()`, `C.summarySlide()` — lesson framing
+- `C.wrapUpSlide()` — 🆕 dark takeaways slide with checkmarks + amber "next week" banner
+
+**Content slides:**
 - `C.contentSlide()`, `C.twoColumnSlide()` — bullet content
 - `C.calloutSlide()`, `C.bigIdeaSlide()` — highlight slides
+- `C.keyIdeaSlide()` — 🆕 big concept with two-column under/fully-defined comparison
+
+**Overview & structure:**
+- `C.roadmapSlide()` — 🆕 week-ahead lesson cards with big numbers, icons, accent strips
+- `C.numberedIntentsSlide()` — 🆕 numbered learning intentions with cyan number band
+- `C.processStepsSlide()` — 🆕 vertical/horizontal numbered step sequences
+
+**Question slides:**
+- `C.mcQuestionSlide()` — basic lettered MCQ
+- `C.mcqCardSlide()` — 🆕 2×2 answer cards with letter chips, green border for correct answer
+- `C.shortAnswerSlide()`, `C.extendedResponseSlide()` — written response slides
+
+**Comparison & tables:**
+- `C.comparisonSlide()` — basic two-column bullet comparison
+- `C.comparisonColumnsSlide()` — 🆕 visual side-by-side with winner/loser styling, big text
+- `C.tableSlide()`, `C.fillTableSlide()` — data tables
+- `C.checklistSlide()` — checkbox lists
+
+**Worked examples & practice:**
 - `C.workedExampleSlide()`, `C.nowYouTrySlide()` — worked examples (answers in speaker notes)
-- `C.mcQuestionSlide()`, `C.shortAnswerSlide()`, `C.extendedResponseSlide()` — question slides
-- `C.tableSlide()`, `C.fillTableSlide()` — table slides
-- `C.comparisonSlide()`, `C.checklistSlide()` — structured content
+- `C.stepStripSlide()` — 🆕 horizontal connected step cards with arrows + amber callout box
+
+**Task/activity slides:**
+- `C.taskCardsSlide()` — 🆕 activity cards with emoji, time chips, amber accent
 - `C.imageSlide()`, `C.diagramSlide()` — visual slides
 - `C.customSlide()` — advanced: raw pptxgenjs access
+
+**Table cell styling:**
 - `H.cellH()`, `H.cellP()`, `H.cellWE()`, `H.cellHint()`, `H.cellE()` — table cell styling
 - `H.formatRow()` — normalize row arrays
+
+> **🎨 Visual style — automatic vs opt-in:** The enhanced colour palette (`navy`, `cyan`, `amber`, `green`, `red` + light tints), 19 pre-rendered SVG icons (via `C.icon("check")`, `C.icon("arrow")`, etc.), and card shadows (`C.softShadow()`) are available to all slides. But the rich Claude-inspired layouts only apply when you use the 🆕 helpers. Existing helpers (`C.titleSlide()`, `C.contentSlide()`, `C.mcQuestionSlide()`, etc.) still work identically and produce the traditional blue-header style. Mix and match freely — a deck can use `C.lessonTitleSlide()` for a dark cover and `C.contentSlide()` for bullet slides in the same deck.
+>
+> **When to use which title slide:**
+> - `C.lessonTitleSlide(n, title, hook, subtitle)` — dark navy cover with hook text. Best for standalone lessons or multi-lesson decks where each lesson gets its own dramatic intro.
+> - `C.titleSlide(title, subtitle, author)` — traditional blue cover. Best for simple presentations, revision decks, or when you want the classic look.
+>
+> **When to use which overview:**
+> - `C.roadmapSlide()` — for multi-lesson decks (e.g. Week 2 overview with Lessons 4/5/6 cards). Place after the title slide.
+> - `C.numberedIntentsSlide()` — for single-lesson learning intentions. Place after the title or roadmap.
 
 **PPTX Speaker Notes:** All answers, teaching guidance, and marking criteria go into speaker notes via `def.notes` or `C.answerNotes()`. The PPTX pipeline does NOT produce separate teacher edition files — the teacher uses Presenter View to see answers.
 
@@ -466,10 +548,60 @@ If the user chose open-source images:
 
 > **Refer to the contextual placement guide above (E5 follow-ups section) to decide which slides need images vs videos vs ASCII diagrams vs nothing.**
 
-1. **Create a download folder:** `content/images/`
-2. **Fetch images** from the chosen sources (OpenStax, Wikimedia Commons, PhET, etc.). Verify each image's license is compatible (CC-BY, CC0, public domain).
-3. **Save locally** with descriptive filenames (e.g. `chloroplast_diagram.png`, `circuit_battery_led.png`).
-4. **Inject into content modules** using the `ImageRun` helper:
+#### Image download workflow (streamlined)
+
+Use `tools/download_image.py` as the default entrypoint. It now escalates automatically from `requests`/BeautifulSoup to a Playwright browser helper when a page is JS-rendered.
+
+**One-time setup for browser-rendered sources:**
+
+```powershell
+npm install
+npx playwright install chromium
+```
+
+**Path A: single command (default for almost everything)**
+
+```powershell
+# Direct image URL from any CDN:
+python tools/download_image.py "https://example.com/image.png" "./content/images/output.png"
+
+# Wikimedia Commons file page (uses og:image):
+python tools/download_image.py --scrape "https://commons.wikimedia.org/wiki/File:Ohm%27s_Law_with_Voltage_source.svg" "./content/images/ohms-law-diagram.png"
+
+# OpenStax / Pixabay / NASA pages (browser-rendered fallback is automatic once Playwright is installed):
+python tools/download_image.py --scrape "https://openstax.org/books/physics/pages/19-1-ohms-law" "./content/images/openstax-figure.webp"
+python tools/download_image.py --scrape "https://pixabay.com/photos/search/series%20circuit/" "./content/images/pixabay-photo.jpg"
+
+# OpenClipart detail page:
+python tools/download_image.py --scrape "https://openclipart.org/detail/194747/simple-circuit" "./content/images/circuit.png"
+```
+
+**Path B: browser helper directly (use when you want to inspect candidates or force a screenshot)**
+
+```powershell
+# Dump rendered candidates as JSON:
+node tools/browser_image_helper.cjs extract "https://openstax.org/books/physics/pages/19-1-ohms-law"
+
+# Download the best rendered image candidate:
+node tools/browser_image_helper.cjs download "https://pixabay.com/photos/search/series%20circuit/" "./content/images/output.jpg"
+
+# Force a screenshot for canvas / SVG tools like Desmos:
+node tools/browser_image_helper.cjs screenshot "https://www.desmos.com/calculator" "./content/images/desmos-graph.png"
+```
+
+**Path C: Browser element screenshot (universal fallback)**
+
+If both Python and curl fail, use `browser_take_screenshot` with `fullPage: true` on the image page. Crop if needed. This always works but may have lower resolution.
+
+**Path D: Manual-only sources**
+
+For Library of Congress, David Rumsey, Fritzing, and most Tinkercad project URLs, automation is still blocked by Cloudflare, authentication, or public-link redirects. Use a manual export or a manually captured screenshot.
+
+#### After downloading
+
+1. **Save locally** with descriptive filenames (e.g. `chloroplast_diagram.png`, `circuit_battery_led.png`).
+2. **Verify license** compatibility (CC-BY, CC0, public domain).
+3. **Inject into content modules** using the `ImageRun` helper:
 
 ```js
 const { ImageRun } = require('docx');
@@ -486,14 +618,37 @@ new Paragraph({
 })
 ```
 
-5. **Always include a figure caption** below the image:
+4. **Always include a figure caption** below the image:
 ```js
 C.p("Figure 1: Cross-section of a chloroplast showing thylakoid stacks (grana).", {
   italic: true, alignment: AlignmentType.CENTER, color: "808080", size: 20
 })
 ```
 
-6. **If the user chose ASCII diagrams**, use box-drawing characters with `font: "Consolas"` inside a bordered table cell (see `DOCX_BUILDER_REFERENCE.md` Section 9.3).
+5. **If the user chose ASCII diagrams**, use box-drawing characters with `font: "Consolas"` inside a bordered table cell (see `DOCX_BUILDER_REFERENCE.md` Section 9.3).
+
+#### ⚠️ Verify image-context alignment (MANDATORY — do this before building)
+
+Every image placed on a slide or in a DOCX resource must **directly illustrate** what the surrounding text is explaining. A generic or tangentially-related image undermines the teaching resource.
+
+**For each image, confirm ALL of the following before building:**
+
+| Check | Question | Pass if... |
+|---|---|---|
+| 1. **Topic match** | Does the image's subject match the slide/paragraph's specific topic? | The image shows exactly what the text is talking about — not something broader or narrower. |
+| 2. **Text bridge** | Does the slide text or caption explicitly reference the image? | At least one sentence says "Look at the image..." or "The diagram shows..." or "Notice how..." — connecting the visual to the concept. |
+| 3. **Year-level appropriate** | Would a student at this year/reading age understand the image? | The image is simple enough. Avoid diagrams with 10+ labels for Year 7. |
+| 4. **Kingdom/scope match** | If the text discusses ALL five kingdoms, does the image show multiple kingdoms (not just one)? | Example: a slide about "why classify all life" should not show only animals. |
+| 5. **No contradiction** | Does the image contradict anything in the text? | Check: labels, colours, terminology all match what the text says. |
+
+**If any check fails:**
+1. First try to **rewrite the slide text** to bridge the image to the concept
+2. If that doesn't work, **find a better image** from the approved sources
+3. If no suitable image exists, **use the `mindMap` feature** (PPTX) or an **ASCII diagram** (DOCX) instead — never use a mismatched image
+
+**Example — FAIL then FIX:**
+- ❌ Engage slide about "Why classify all life?" + image of animals only → fails check 4
+- ✅ Fix: Rewrite text to say "Look at the animals on the right. Scientists use the same sorting rules across ALL five kingdoms — not just animals. Classification gives every living thing its place." → bridges image to concept
 
 ### Step 3c: Handle YouTube videos (if user requested embedded videos in Question 8)
 

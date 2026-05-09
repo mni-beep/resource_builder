@@ -247,14 +247,24 @@
     <div class="option"><input type="radio" name="q4e-format" id="q4e-wide" value="widescreen" checked><label for="q4e-wide">Widescreen 16:9</label></div>
     <div class="option"><input type="radio" name="q4e-format" id="q4e-std" value="standard"><label for="q4e-std">Standard 4:3</label></div>
   </div>
+  <!-- Visual style -->
+  <div class="sub-section">
+    <h3>🎨 Visual Style</h3>
+    <div class="options">
+      <div class="option"><input type="radio" name="q4e-style" id="q4e-style-rich" value="rich" checked><label for="q4e-style-rich"><strong>Rich / modern</strong> — dark navy covers, card layouts, icons, shadows</label></div>
+      <div class="option"><input type="radio" name="q4e-style" id="q4e-style-clean" value="clean"><label for="q4e-style-clean"><strong>Clean / traditional</strong> — blue headers, simple bullets, classic look</label></div>
+      <div class="option"><input type="radio" name="q4e-style" id="q4e-style-mixed" value="mixed"><label for="q4e-style-mixed"><strong>Mixed</strong> — rich covers + traditional body slides</label></div>
+    </div>
+  </div>
   <!-- Elaborate worksheet -->
   <div class="sub-section" id="sec-q4-eworksheet">
     <h3>Elaborate Companion Worksheet</h3>
     <div class="options">
-      <div class="option"><input type="radio" name="q4e-ws" id="q4e-ws-yes" value="yes" checked onchange="updateVisibility()"><label for="q4e-ws-yes">Yes — build DOCX worksheet</label></div>
-      <div class="option"><input type="radio" name="q4e-ws" id="q4e-ws-no" value="no" onchange="updateVisibility()"><label for="q4e-ws-no">No — slide activities only</label></div>
+      <div class="option"><input type="radio" name="q4e-ws" id="q4e-ws-yes" value="yes" onchange="updateVisibility()"><label for="q4e-ws-yes">Yes — build DOCX worksheet</label></div>
+      <div class="option"><input type="radio" name="q4e-ws" id="q4e-ws-no" value="no" checked onchange="updateVisibility()"><label for="q4e-ws-no">No — slide activities only</label></div>
+      <div class="option"><input type="radio" name="q4e-ws" id="q4e-ws-none" value="none" onchange="updateVisibility()"><label for="q4e-ws-none">No — no slide activities</label></div>
     </div>
-    <div id="sec-q4-eworksheet-details">
+    <div id="sec-q4-eworksheet-details" class="hidden">
       <p style="color:#2B579A; font-size:13px; margin:10px 0">→ Select question types in <strong>Question 5</strong> below. Every checked type will be built into the worksheet.</p>
       <div class="field"><label>Worksheet output filename</label><input type="text" id="q4ews-file" placeholder="resource-worksheet.docx"></div>
       <div class="options" style="margin-top:8px">
@@ -282,14 +292,24 @@
     <div class="option"><input type="radio" name="q4s-format" id="q4s-wide" value="widescreen" checked><label for="q4s-wide">Widescreen 16:9</label></div>
     <div class="option"><input type="radio" name="q4s-format" id="q4s-std" value="standard"><label for="q4s-std">Standard 4:3</label></div>
   </div>
+  <!-- Visual style -->
+  <div class="sub-section">
+    <h3>🎨 Visual Style</h3>
+    <div class="options">
+      <div class="option"><input type="radio" name="q4s-style" id="q4s-style-rich" value="rich" checked><label for="q4s-style-rich"><strong>Rich / modern</strong> — dark navy covers, card layouts, icons, shadows</label></div>
+      <div class="option"><input type="radio" name="q4s-style" id="q4s-style-clean" value="clean"><label for="q4s-style-clean"><strong>Clean / traditional</strong> — blue headers, simple bullets, classic look</label></div>
+      <div class="option"><input type="radio" name="q4s-style" id="q4s-style-mixed" value="mixed"><label for="q4s-style-mixed"><strong>Mixed</strong> — rich covers + traditional body slides</label></div>
+    </div>
+  </div>
   <!-- Companion worksheet for standard lessons -->
   <div class="sub-section" id="sec-q4-sworksheet">
     <h3>Companion Worksheet</h3>
     <div class="options">
       <div class="option"><input type="radio" name="q4s-ws" id="q4s-ws-yes" value="yes" onchange="updateVisibility()"><label for="q4s-ws-yes">Yes — build DOCX worksheet</label></div>
-      <div class="option"><input type="radio" name="q4s-ws" id="q4s-ws-no" value="no" checked onchange="updateVisibility()"><label for="q4s-ws-no">No</label></div>
+      <div class="option"><input type="radio" name="q4s-ws" id="q4s-ws-no" value="no" checked onchange="updateVisibility()"><label for="q4s-ws-no">No — slide activities only</label></div>
+      <div class="option"><input type="radio" name="q4s-ws" id="q4s-ws-none" value="none" onchange="updateVisibility()"><label for="q4s-ws-none">No — no slide activities</label></div>
     </div>
-    <div id="sec-q4-sworksheet-details">
+    <div id="sec-q4-sworksheet-details" class="hidden">
       <p style="color:#2B579A; font-size:13px; margin:10px 0">→ Select question types in <strong>Question 5</strong> below. Every checked type will be built into the worksheet.</p>
       <div class="field"><label>Worksheet output filename</label><input type="text" id="q4sws-file" placeholder="resource-worksheet.docx"></div>
       <div class="options" style="margin-top:8px">
@@ -554,8 +574,12 @@ function updateVisibility() {
     hide('sec-q4-booklet'); // single worksheet doesn't need booklet Q4
   }
 
-  // Q6: Scaffolding — hide for assessments & unit guides
-  const skipScaffolding = (isDocx && (isAssessment || isUnitGuide)) || (isPptx && (isAssessmentPptx));
+  // Q6: Scaffolding — hide for assessments, unit guides, and "no slide activities" PPTX
+  const pptxNoActivities = (isPptx && isE5 && qval('q4e-ws') === 'none')
+    || (isPptx && isStandardPptx && qval('q4s-ws') === 'none');
+  const skipScaffolding = (isDocx && (isAssessment || isUnitGuide))
+    || (isPptx && (isAssessmentPptx))
+    || pptxNoActivities;
   showIf('sec-q6', started && !skipScaffolding);
 
   // Q7: hide header field for PPTX
@@ -658,22 +682,35 @@ function generatePrompt() {
     q4details.push(`  Lessons: ${v('q4e-lessons')}, Slides: ${v('q4e-slides')}`);
     q4details.push(`  Title: ${v('q4e-title')}, Objectives: ${v('q4e-objectives')}, Summary: ${v('q4e-summary')}, Dividers: ${v('q4e-dividers')}`);
     q4details.push(`  Format: ${qval('q4e-format')}`);
+    q4details.push(`  Visual style: ${qval('q4e-style') || 'rich'} (Rich = dark navy covers/cards/icons, Clean = traditional blue headers, Mixed = rich structural + traditional body)`);
     q4details.push(`  E5 depth: ${qval('q4e-depth') === 'extended' ? 'Extended (extra theory, worked examples, now-you-try, comparison)' : 'Standard (1 slide per phase)'}`);
     q4details.push(`  Slides per phase: Engage ${v('q4e-ph-engage','1')}, Explore ${v('q4e-ph-explore','1')}, Explain ${v('q4e-ph-explain','2')}, Elaborate ${v('q4e-ph-elaborate','1')}, Evaluate ${v('q4e-ph-evaluate','1')}`);
-    if (qval('q4e-ws') === 'yes') {
+    const e5wsChoice = qval('q4e-ws');
+    if (e5wsChoice === 'yes') {
       const wsItems = checkedIds('q5-');
       q4details.push(`  Companion worksheet: Yes — ${wsItems.join(', ') || 'see Question 5'}`);
       q4details.push(`  Worksheet file: ${v('q4ews-file')}, Answers: ${qval('q4ews-ans')}`);
       if (wsItems.length > 0) q4details.push('  ⚠️ HARD RULE: EVERY checked worksheet type MUST appear as a distinct activity in the worksheet.');
+    } else if (e5wsChoice === 'no') {
+      q4details.push('  Companion worksheet: No — slide activities only (fill-in tables, checklists, prompts on slides)');
+    } else {
+      q4details.push('  Companion worksheet: No — no slide activities (theory/examples only, no student tasks)');
     }
   }
   if (isPptx && q1p === 'standard') {
     q4details.push(`  Lessons: ${v('q4s-lessons')}, Slides: ${v('q4s-slides')}`);
     q4details.push(`  Title: ${v('q4s-title')}, Objectives: ${v('q4s-objectives')}, Summary: ${v('q4s-summary')}, Format: ${qval('q4s-format')}`);
-    if (qval('q4s-ws') === 'yes') {
+    q4details.push(`  Visual style: ${qval('q4s-style') || 'rich'} (Rich = dark navy covers/cards/icons, Clean = traditional blue headers, Mixed = rich structural + traditional body)`);
+    const stdWsChoice = qval('q4s-ws');
+    if (stdWsChoice === 'yes') {
       const wsItems = checkedIds('q5-');
       q4details.push(`  Companion worksheet: Yes — ${wsItems.join(', ') || 'see Question 5'}`);
       q4details.push(`  Worksheet file: ${v('q4sws-file')}, Answers: ${qval('q4sws-ans')}`);
+      if (wsItems.length > 0) q4details.push('  ⚠️ HARD RULE: EVERY checked worksheet type MUST appear as a distinct activity in the worksheet.');
+    } else if (stdWsChoice === 'no') {
+      q4details.push('  Companion worksheet: No — slide activities only (fill-in tables, checklists, prompts on slides)');
+    } else {
+      q4details.push('  Companion worksheet: No — no slide activities (theory/examples only, no student tasks)');
     }
   }
   if (isPptx && q1p === 'revision-pptx') {
@@ -694,9 +731,15 @@ function generatePrompt() {
   const q5extras = checkedIds('q5-').join(', ');
   if (q5extras) lines.push(`Additional question types: ${q5extras}`);
 
-  // Q6
-  const q6val = qval('q6');
-  if (q6val) lines.push(`Scaffolding: ${q6val}`);
+  // Q6 — skip for DOCX assessments/unit-guides, PPTX assessment walkthroughs, and PPTX "no activities"
+  const genPptxNoAct = (isPptx && ((q1p === 'e5' && qval('q4e-ws') === 'none') || (q1p === 'standard' && qval('q4s-ws') === 'none')));
+  const genSkipScaff = (isDocx && (q1d === 'assessment' || q1d === 'unitguide'))
+    || (isPptx && q1p === 'assessment-pptx')
+    || genPptxNoAct;
+  if (!genSkipScaff) {
+    const q6val = qval('q6');
+    if (q6val) lines.push(`Scaffolding: ${q6val}`);
+  }
 
   // Q7
   lines.push(`Output file: ${v('q7-file', '[Agent choice]')}`);

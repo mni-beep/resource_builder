@@ -10,6 +10,83 @@ const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
 
+// ---- ICON SYSTEM (React + sharp for SVG → base64 PNG) ----
+let _sharp, _React, _ReactDOMServer, _iconComponents;
+let _ICONS = {};  // pre-rendered icon cache: name → "image/png;base64,..."
+let _iconsReady = false;
+
+function _loadIconDeps() {
+  if (_iconsReady) return true;
+  try {
+    _sharp = require('sharp');
+    _React = require('react');
+    _ReactDOMServer = require('react-dom/server');
+    const Fa = require('react-icons/fa');
+    const Md = require('react-icons/md');
+    _iconComponents = { ...Fa, ...Md };
+    _iconsReady = true;
+    return true;
+  } catch (e) {
+    console.warn('  ⚠ Icon dependencies not available — falling back to Unicode emoji.');
+    console.warn('    Install with: npm install sharp react react-dom react-icons');
+    return false;
+  }
+}
+
+/** Render a React icon component to a base64 PNG data URI. */
+async function _iconToBase64Png(IconComponent, color = "2B579A", size = 256) {
+  if (!_sharp) return null;
+  try {
+    const svg = _ReactDOMServer.renderToStaticMarkup(
+      _React.createElement(IconComponent, { color: `#${color}`, size: String(size) })
+    );
+    const png = await _sharp(Buffer.from(svg)).png().toBuffer();
+    return "image/png;base64," + png.toString("base64");
+  } catch (e) { return null; }
+}
+
+/**
+ * Pre-render a core set of named icons for use by slide helpers.
+ * Call once at startup (from build-pptx.js). Returns a map of name→dataURI.
+ */
+async function initIcons() {
+  if (!_loadIconDeps()) return _ICONS;
+  const C = _iconComponents;
+  const pairs = [
+    ["check",       C.FaCheck,                 "10B981"],
+    ["cross",       C.FaTimes,                 "DC2626"],
+    ["arrow",       C.FaArrowRight,            "0891B2"],
+    ["bulb",        C.FaLightbulb,             "F59E0B"],
+    ["pencil",      C.FaPencilRuler,           "0891B2"],
+    ["cube",        C.FaCube,                  "0891B2"],
+    ["search",      C.FaSearch,                "0891B2"],
+    ["target",      C.FaBullseye,              "F59E0B"],
+    ["warning",     C.FaExclamationTriangle,   "F59E0B"],
+    ["question",    C.FaQuestionCircle,        "F59E0B"],
+    ["teacher",     C.FaChalkboardTeacher,     "FFFFFF"],
+    ["student",     C.FaUserEdit,              "0891B2"],
+    ["ruler",       C.FaRuler,                 "0891B2"],
+    ["compass",     C.FaDraftingCompass,       "0891B2"],
+    ["clipboard",   C.FaClipboardCheck,        "0891B2"],
+    ["objects",     C.FaObjectGroup,           "0891B2"],
+    ["straight",    C.MdStraighten,            "0891B2"],
+    ["square",      C.MdSquare,                "0891B2"],
+    ["horiz",       C.MdHorizontalRule,        "0891B2"],
+  ];
+  for (const [name, comp, color] of pairs) {
+    try {
+      _ICONS[name] = await _iconToBase64Png(comp, color);
+    } catch (e) { /* skip individual failures */ }
+  }
+  console.log(`  🎨 ${Object.keys(_ICONS).length} icons pre-rendered`);
+  return _ICONS;
+}
+
+/** Get a pre-rendered icon by name. Returns base64 data URI or null. */
+function icon(name) {
+  return _ICONS[name] || null;
+}
+
 // ---- COLOUR PALETTE (shared with DOCX pipeline) ----
 const COLOURS = {
   primary: "2B579A",    // deep blue — headers, banners, table header fills
@@ -22,6 +99,21 @@ const COLOURS = {
   greenBg: "E2EFDA",    // light green — worked example background
   white: "FFFFFF",
   black: "000000",
+
+  // ---- Claude-inspired rich palette ----
+  navy:       "0F2A47",   // deep navy — dark slide backgrounds
+  navyLight:  "21456E",   // lighter navy
+  cyan:       "0891B2",   // CAD/cyan — secondary accent, corner marks
+  cyanLight:  "CFEFF6",   // pale cyan tint
+  amber:      "F59E0B",   // amber accent — highlights, dimensions, callouts
+  amberLight: "FEF3C7",   // pale amber tint
+  green:      "10B981",   // success green (more vibrant)
+  greenBg2:   "D1FAE5",   // light green background
+  red:        "DC2626",   // error red
+  redLight:   "FEE2E2",   // light red background
+  muted:      "64748B",   // muted grey-blue text
+  paleBg:     "F4F7FB",   // pale blueprint/paper background
+  rule:       "DCE3EC",   // light rule lines
 
   // ---- E5 Instructional Model colours ----
   e5Engage:    "E86A17",  // warm orange — hook, curiosity, prior knowledge
@@ -314,18 +406,34 @@ function resolveImage(imagePath) {
 /**
  * E5 Theme — customise colours, positions, fonts for all E5 slides.
  * Override any property before building.
+ *
+ * Phase colours (used for button, SM bar, accents):
+ *   Engage=Orange, Explore=Teal, Explain=Blue, Elaborate=Purple, Evaluate=Red
  */
+const _E5_PHASE_COLOURS = {
+  "Engage":    { fill: "E86A17", light: "FFF0E5", text: "FFFFFF", icon: "bulb" },
+  "Explore":   { fill: "008080", light: "E0F0F0", text: "FFFFFF", icon: "search" },
+  "Explain":   { fill: "2B579A", light: "E8F0FE", text: "FFFFFF", icon: "pencil" },
+  "Elaborate": { fill: "7B2D8E", light: "F3E5F5", text: "FFFFFF", icon: "cube" },
+  "Evaluate":  { fill: "C00000", light: "FFEBEE", text: "FFFFFF", icon: "target" },
+};
+
+/** Get phase colours for a given phase name. */
+function _phaseColours(phaseName) {
+  return _E5_PHASE_COLOURS[phaseName] || { fill: "C00000", light: "FFEBEE", text: "FFFFFF", icon: "target" };
+}
+
 const E5_THEME = {
   slideH: 7.5,          // slide height (same for widescreen & standard)
-  // Phase button (top-right)
+  // Phase button (top-right) — fill/light are set dynamically per phase
   phaseButton: {
-    fill: "C00000", textColor: "FFFFFF", fontFace: "Calibri",
+    fontFace: "Calibri",
     fontSize: 13, italic: true, bold: false,
     x: "78%", y: 0.25, w: 1.9, h: 0.45, rectRadius: 0.08,
   },
-  // SM bar (full-width bottom bar)
+  // SM bar (full-width bottom bar) — colour is set dynamically per phase
   smBar: {
-    fill: "A8D08D", textColor: "000000", fontFace: "Calibri",
+    fontFace: "Calibri",
     fontSize: 13, bold: false,
     height: 0.55, yOffset: 0.55,   // bar top = slideH - height, text inset
   },
@@ -336,7 +444,7 @@ const E5_THEME = {
   },
   // Heading (below skill label)
   heading: {
-    color: "000000", fontFace: "Calibri", fontSize: 26, bold: true,
+    color: "0F2A47", fontFace: "Calibri", fontSize: 26, bold: true,
     x: 0.5, y: 0.75, w: "72%", h: 0.7,
   },
   // Body text defaults
@@ -344,16 +452,19 @@ const E5_THEME = {
   // Two-column split positions
   leftCol:  { x: 0.5,  w: "52%" },
   rightCol: { x: "56%", w: "40%" },
-  // Callout box (used in Explain slides)
+  // Callout box (used in Explain & continuation slides) — light tint is phase-aware
   callout: {
-    fill: "E2F0D9", borderColor: "A8D08D",
-    textColor: "333333", fontFace: "Calibri", fontSize: 14,
+    fontFace: "Calibri", fontSize: 14,
+    borderWidth: 1, rectRadius: 0.06,
   },
+  // Card shadow (rich styling — subtle drop shadow on content areas)
+  cardShadow: { type: "outer", color: "0F2A47", blur: 8, offset: 2, angle: 90, opacity: 0.06 },
   // Learning Intention two-panel slide
   liPanel: {
-    leftBg: "FFFFFF", rightBg: "E2F0D9",
-    leftTextColor: "000000", rightTextColor: "000000",
+    leftBg: "F4F7FB", rightBg: "E8F0FE",
+    leftTextColor: "0F2A47", rightTextColor: "0F2A47",
     headingFontSize: 32,
+    accent: "0891B2",  // cyan accent for decorative elements
   },
 };
 
@@ -373,44 +484,46 @@ function _e5RenderChrome(slide, def) {
   const ec = def._e5;
   if (!ec) return;
   const T = E5_THEME;
+  const pc = _phaseColours(ec.phase);  // phase-aware colours
 
-  // 1. Skill label (top-left)
+  // 1. Skill label (top-left) — now uses navy colour for richer look
   if (ec.skillLabel) {
     slide.addText(ec.skillLabel, {
       x: T.skillLabel.x, y: T.skillLabel.y, w: T.skillLabel.w, h: T.skillLabel.h,
       fontSize: T.skillLabel.fontSize, fontFace: T.skillLabel.fontFace,
-      color: T.skillLabel.color,
+      color: COLOURS.navy,
     });
   }
 
-  // 2. Phase button (top-right) — red rounded rectangle
+  // 2. Phase button (top-right) — coloured per phase
   if (ec.phase) {
     const pb = T.phaseButton;
-    slide.addShape(slide._slideLayout ? "roundRect" : "rect", {
+    slide.addShape("roundRect", {
       x: pb.x, y: pb.y, w: pb.w, h: pb.h,
-      fill: { color: pb.fill },
+      fill: { color: pc.fill },
       rectRadius: pb.rectRadius || 0.08,
+      shadow: T.cardShadow,
     });
     slide.addText(ec.phase, {
       x: pb.x, y: pb.y, w: pb.w, h: pb.h,
       fontSize: pb.fontSize, fontFace: pb.fontFace,
-      color: pb.textColor, italic: pb.italic, bold: pb.bold,
+      color: pc.text, italic: pb.italic, bold: pb.bold,
       align: "center", valign: "middle",
     });
   }
 
-  // 3. SM bar (bottom) — full-width green bar
+  // 3. SM bar (bottom) — tinted per phase (light colour)
   if (ec.smText) {
     const sb = T.smBar;
     const barY = T.slideH - sb.height;
     slide.addShape("rect", {
       x: 0, y: barY, w: "100%", h: sb.height,
-      fill: { color: sb.fill },
+      fill: { color: pc.light },
     });
     slide.addText("SM: " + ec.smText, {
       x: 0.5, y: barY + 0.08, w: "92%", h: sb.height - 0.16,
       fontSize: sb.fontSize, fontFace: sb.fontFace,
-      color: sb.textColor, bold: sb.bold,
+      color: "333333", bold: sb.bold,
       valign: "middle",
     });
   }
@@ -472,10 +585,10 @@ function e5LearningIntentionSlide(skillLabel, intention, measures = {}) {
         align: "center", valign: "middle",
       });
       if (intention) {
-        // Thin decorative line
+        // Thin decorative line — phase-aware colour
         slide.addShape("rect", {
           x: "12%", y: 3.0, w: "26%", h: 0.02,
-          fill: { color: "C00000" },
+          fill: { color: T.liPanel.accent },
         });
         slide.addText(intention, {
           x: "8%", y: 3.3, w: "34%", h: 3.0,
@@ -762,20 +875,22 @@ function e5ExplainSlide(skillLabel, heading, contentBlocks, calloutText, smText,
       }
     });
 
-    // Callout box
+    // Callout box — phase-aware colours
     if (calloutText) {
       const cb = T.callout;
+      const pc = _phaseColours(def._e5 && def._e5.phase);
       contentY += 0.2;
       slide.addShape("roundRect", {
         x: T.leftCol.x, y: contentY, w: leftW, h: 0.7,
-        fill: { color: cb.fill },
-        line: { color: cb.borderColor, width: 1 },
-        rectRadius: 0.06,
+        fill: { color: pc.light },
+        line: { color: pc.fill, width: cb.borderWidth || 1 },
+        rectRadius: cb.rectRadius,
+        shadow: T.cardShadow,
       });
       slide.addText(calloutText, {
         x: parseFloat(T.leftCol.x) + 0.3, y: contentY, w: "82%", h: 0.7,
         fontSize: cb.fontSize, fontFace: cb.fontFace,
-        color: cb.textColor, valign: "middle",
+        color: "333333", valign: "middle",
       });
     }
 
@@ -784,6 +899,93 @@ function e5ExplainSlide(skillLabel, heading, contentBlocks, calloutText, smText,
       slide.addImage({
         path: resolveImage(opts.imagePath),
         x: T.rightCol.x, y: 1.5, w: "36%", h: 4.0,
+      });
+    }
+
+    if (def.notes) slide.addNotes(def.notes);
+  };
+  return def;
+}
+
+/**
+ * E5 Continuation Slide — extra slides within a phase that carry
+ * the same E5 chrome (skill label, phase button, SM bar) as the main
+ * phase slide. Use for multi-slide phases (e.g. Engage 2, Explain 2).
+ *
+ * @param {string} skillLabel - same as the main phase slide
+ * @param {string} phaseName  - "Engage"|"Explore"|"Explain"|"Elaborate"|"Evaluate"
+ * @param {string} smText     - success measure text for the bottom bar
+ * @param {string} title      - heading for this continuation slide
+ * @param {string[]} bullets  - bullet points (like C.contentSlide) — pass null for table mode
+ * @param {object} opts       - { notes, hint, iconName, table: { headers[], rows[][], colWidths[]? } }
+ */
+function e5ContinuationSlide(skillLabel, phaseName, smText, title, bullets, opts = {}) {
+  const def = _e5Chrome({ type: "custom", notes: opts.notes || "" }, skillLabel, phaseName, smText);
+  def._e5Body = { title, bullets, hint: opts.hint || "", iconName: opts.iconName || "", table: opts.table || null };
+  def.render = function (slide, H) {
+    _e5RenderChrome(slide, def);
+    const T = E5_THEME;
+    const pc = _phaseColours(phaseName);
+
+    // Heading with optional icon
+    const headingX = opts.iconName && icon(opts.iconName) ? parseFloat(T.heading.x) + 0.55 : T.heading.x;
+    const headingW = opts.iconName && icon(opts.iconName) ? "68%" : T.heading.w;
+
+    if (title) {
+      if (opts.iconName && icon(opts.iconName)) {
+        slide.addImage({
+          data: icon(opts.iconName),
+          x: T.heading.x, y: T.heading.y + 0.05, w: 0.45, h: 0.45,
+        });
+      }
+      slide.addText(title, {
+        x: headingX, y: T.heading.y, w: headingW, h: T.heading.h,
+        fontSize: T.heading.fontSize, bold: T.heading.bold,
+        fontFace: T.heading.fontFace, color: T.heading.color,
+      });
+    }
+
+    // Optional hint
+    let bodyY = 1.7;
+    if (opts.hint) {
+      slide.addText(opts.hint, {
+        x: T.leftCol.x, y: 1.5, w: "90%", h: 0.35,
+        fontSize: 12, italic: true, color: COLOURS.greyText, fontFace: T.body.fontFace,
+      });
+      bodyY = 2.0;
+    }
+
+    // Table mode
+    if (opts.table) {
+      const tbl = opts.table;
+      const hdrRow = (tbl.headers || []).map(h => ({ text: h, options: { bold: true, color: "FFFFFF", fill: { color: pc.fill }, align: "center", fontSize: 12, valign: "middle" } }));
+      const dataRows = (tbl.rows || []).map(row =>
+        row.map(cell => {
+          if (typeof cell === 'string') return { text: cell, options: { fontSize: 12, valign: "middle" } };
+          return cell;
+        })
+      );
+      const colW = tbl.colWidths || (tbl.headers || []).map(() => 8 / tbl.headers.length);
+      const tblW = colW.reduce((a, b) => a + (typeof b === 'number' ? b : 1.5), 0);
+      slide.addTable([hdrRow, ...dataRows], {
+        x: 0.5, y: bodyY, w: Math.min(tblW, 12.3),
+        colW: colW,
+        rowH: [0.35, ...dataRows.map(() => 0.4)],
+        border: { type: "solid", pt: 0.5, color: "BFBFBF" },
+        fontFace: T.body.fontFace,
+      });
+    } else if (bullets && bullets.length > 0) {
+      // Rich card background with subtle shadow
+      slide.addShape("roundRect", {
+        x: 0.5, y: bodyY - 0.1, w: "92%", h: (bullets.length * 0.45) + 0.6,
+        fill: { color: COLOURS.white },
+        shadow: T.cardShadow,
+        rectRadius: 0.08,
+      });
+      slide.addText(bullets.map(b => typeof b === 'string' ? { text: b, options: { bullet: true } } : b), {
+        x: 0.8, y: bodyY + 0.15, w: "88%", h: bullets.length * 0.45,
+        fontSize: T.body.fontSize, fontFace: T.body.fontFace,
+        color: T.body.color, valign: "top", lineSpacing: 22,
       });
     }
 
@@ -809,6 +1011,7 @@ function e5ElaborateSlide(skillLabel, heading, instruction, activityItems, smTex
   def.render = function (slide, H) {
     _e5RenderChrome(slide, def);
     const T = E5_THEME;
+    const pc = _phaseColours("Elaborate");
 
     // Heading
     slide.addText(heading || "", {
@@ -828,18 +1031,18 @@ function e5ElaborateSlide(skillLabel, heading, instruction, activityItems, smTex
       ay += 0.6;
     }
 
-    // Activity table
+    // Activity table — rich styled
     const items = activityItems || [];
     if (items.length > 0) {
       const headerRow = [
-        { text: "Activities", options: { bold: true, color: "FFFFFF", fill: { color: "808080" }, align: "center", fontSize: 14 } }
+        { text: "Activities", options: { bold: true, color: "FFFFFF", fill: { color: pc.fill }, align: "center", fontSize: 14 } }
       ];
       const dataRows = items.map(item => [
         {
           text: (item.link ? "🔗 " : "") + (item.name || item),
           options: {
-            fill: { color: "E2F0D9" },
-            color: item.link ? "C00000" : "000000",
+            fill: { color: pc.light },
+            color: item.link ? pc.fill : "000000",
             underline: !!item.link,
             fontSize: 14,
             valign: "middle",
@@ -876,6 +1079,7 @@ function e5EvaluateSlide(skillLabel, heading, assessmentLink, smText, opts = {})
   def.render = function (slide, H) {
     _e5RenderChrome(slide, def);
     const T = E5_THEME;
+    const pc = _phaseColours("Evaluate");
 
     // Heading
     slide.addText(heading || "", {
@@ -884,12 +1088,12 @@ function e5EvaluateSlide(skillLabel, heading, assessmentLink, smText, opts = {})
       fontFace: T.heading.fontFace, color: T.heading.color,
     });
 
-    // Assessment link (centred, red underlined)
+    // Assessment link (centred, phase-coloured, underlined)
     if (assessmentLink) {
       slide.addText(assessmentLink, {
         x: "10%", y: 3.0, w: "80%", h: 0.8,
         fontSize: 20, fontFace: T.body.fontFace,
-        color: "C00000", underline: true,
+        color: pc.fill, underline: true,
         align: "center", valign: "middle",
       });
     }
@@ -1203,6 +1407,230 @@ function videoSlide(title, videoSource, caption, opts = {}) {
 }
 
 // ============================================================
+// CHROME & SHADOW HELPERS
+// ============================================================
+
+/** Soft card shadow — use with pptxgenjs shape shadow option. */
+function softShadow(color = "0F2A47", blur = 12, offset = 3, opacity = 0.08) {
+  return { type: "outer", color, blur, offset, angle: 90, opacity };
+}
+
+/** Chrome configuration for per-slide decorative elements. */
+const CHROME = {
+  cornerMark: { color: COLOURS.cyan, w: 0.18, h: 0.02, gap: 0.02 },
+  lessonChip: {
+    fontFace: FONT.body, fontSize: 10, color: COLOURS.cyan, charSpacing: 4, bold: true,
+  },
+  footer: {
+    fontFace: FONT.body, fontSize: 9, color: COLOURS.muted, italic: true,
+  },
+};
+
+// ============================================================
+// RICH LAYOUT SLIDE HELPERS (Claude-inspired)
+// ============================================================
+
+/**
+ * Lesson title slide — dark cover with decorative grid, lesson chip, hook.
+ * @param {number} lessonNum - e.g. 4
+ * @param {string} title - e.g. "Measuring & Dimensioning"
+ * @param {string} hook - engaging hook text
+ * @param {string} hookSubtitle - italic subtitle below hook
+ * @param {object} opts - { notes, timing ("HOOK · 5 min"), accentColor }
+ */
+function lessonTitleSlide(lessonNum, title, hook, hookSubtitle, opts = {}) {
+  return {
+    type: "lessonTitle",
+    lessonNum, title, hook, hookSubtitle,
+    timing: opts.timing || "",
+    accentColor: opts.accentColor || COLOURS.cyan,
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Roadmap / week-ahead slide — 3 lesson cards in a row.
+ * @param {string} eyebrow - small top label e.g. "THE WEEK AHEAD"
+ * @param {string} title - main heading
+ * @param {Array} cards - [{ n, title, sub, icon? }] where n="04", icon is icon name string
+ * @param {object} opts - { notes, takeaway (bottom italic text), totalSlides }
+ */
+function roadmapSlide(eyebrow, title, cards, opts = {}) {
+  return {
+    type: "roadmap",
+    eyebrow: eyebrow || "",
+    title: title || "",
+    cards: cards || [],
+    takeaway: opts.takeaway || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Numbered learning intentions slide — each intent in a styled card with number band.
+ * @param {string} title - e.g. "By the end of today, you can…"
+ * @param {Array} intents - [{ num: "01", text: "..." }]
+ * @param {object} opts - { notes, timing (pedagogical strip text) }
+ */
+function numberedIntentsSlide(title, intents, opts = {}) {
+  return {
+    type: "numberedIntents",
+    title: title || "",
+    intents: intents || [],
+    timing: opts.timing || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Comparison columns slide — side-by-side with winner/loser styling.
+ * @param {string} title
+ * @param {object} left - { header, bigText, bigSub, detailBullets, winner:bool }
+ * @param {object} right - { header, bigText, bigSub, detailBullets, winner:bool }
+ * @param {object} opts - { notes, bottomRule }
+ */
+function comparisonColumnsSlide(title, left, right, opts = {}) {
+  return {
+    type: "comparisonColumns",
+    title: title || "",
+    left: left || {},
+    right: right || {},
+    bottomRule: opts.bottomRule || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * MCQ card slide — 2×2 answer cards with visual feedback.
+ * @param {number} n - question number
+ * @param {string} stem - question text
+ * @param {Array} options - [{ letter:"A", text:"...", correct:bool, why:"..." }]
+ * @param {object} opts - { notes, eyebrow, totalSlides }
+ */
+function mcqCardSlide(n, stem, options, opts = {}) {
+  return {
+    type: "mcqCard",
+    n: n || 1,
+    stem: stem || "",
+    options: options || [],
+    eyebrow: opts.eyebrow || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Process steps slide — vertical or horizontal numbered steps.
+ * @param {string} title
+ * @param {Array} steps - [{ title, desc }]
+ * @param {object} opts - { notes, layout ("vertical"|"horizontal"), subtitle }
+ */
+function processStepsSlide(title, steps, opts = {}) {
+  return {
+    type: "processSteps",
+    title: title || "",
+    steps: steps || [],
+    layout: opts.layout || "vertical",
+    subtitle: opts.subtitle || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Step strip slide — horizontal connected step cards with arrows.
+ * @param {string} eyebrow - small label e.g. "WORKED EXAMPLE"
+ * @param {string} title
+ * @param {Array} steps - [{ n, t (title), d (description) }]
+ * @param {object} opts - { notes, calloutBox { title, text }, totalSlides }
+ */
+function stepStripSlide(eyebrow, title, steps, opts = {}) {
+  return {
+    type: "stepStrip",
+    eyebrow: eyebrow || "",
+    title: title || "",
+    steps: steps || [],
+    calloutBox: opts.calloutBox || null,
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Task cards slide — multiple activity cards with emoji, time chip, description.
+ * @param {string} eyebrow - e.g. "YOUR TURN  ·  3 OBJECTS  ·  30 MINUTES"
+ * @param {string} title
+ * @param {Array} tasks - [{ emoji, title, time, steps }]
+ * @param {object} opts - { notes, bottomChecklist, totalSlides }
+ */
+function taskCardsSlide(eyebrow, title, tasks, opts = {}) {
+  return {
+    type: "taskCards",
+    eyebrow: eyebrow || "",
+    title: title || "",
+    tasks: tasks || [],
+    bottomChecklist: opts.bottomChecklist || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Success criteria panel — dark panel with checkmarks (used as right-column companion).
+ * Returns a render fragment definition for use in custom slides.
+ */
+function successCriteriaPanel(title, items, opts = {}) {
+  return { _panel: "successCriteria", title: title || "SUCCESS CRITERIA", items: items || [], intro: opts.intro || "" };
+}
+
+/**
+ * Callout strip — amber warning/note strip for bottom of a slide.
+ * Returns a render fragment definition.
+ */
+function calloutStrip(text, type = "warning") {
+  return { _strip: "callout", text, type };
+}
+
+/**
+ * Key idea slide — big definition with two-column comparison below.
+ * @param {string} eyebrow - e.g. "KEY IDEA"
+ * @param {string} title - the big concept name
+ * @param {string} definition - explanatory paragraph
+ * @param {object} left - { header, bullets, problem:bool }
+ * @param {object} right - { header, bullets, problem:bool }
+ * @param {object} opts - { notes, bottomTakeaway }
+ */
+function keyIdeaSlide(eyebrow, title, definition, left, right, opts = {}) {
+  return {
+    type: "keyIdea",
+    eyebrow: eyebrow || "",
+    title: title || "",
+    definition: definition || "",
+    left: left || {},
+    right: right || {},
+    bottomTakeaway: opts.bottomTakeaway || "",
+    notes: opts.notes || "",
+  };
+}
+
+/**
+ * Wrap-up / exit ticket slide — dark background with takeaways and next-week banner.
+ * @param {string} eyebrow - e.g. "WEEK 2  ·  WRAP-UP"
+ * @param {string} title - e.g. "You can now do this."
+ * @param {Array} takeaways - list of achievement strings
+ * @param {string} nextTitle - e.g. "NEXT WEEK"
+ * @param {string} nextText - e.g. "Turning your 2D sketches into 3D models..."
+ * @param {object} opts - { notes }
+ */
+function wrapUpSlide(eyebrow, title, takeaways, nextTitle, nextText, opts = {}) {
+  return {
+    type: "wrapUp",
+    eyebrow: eyebrow || "",
+    title: title || "",
+    takeaways: takeaways || [],
+    nextTitle: nextTitle || "",
+    nextText: nextText || "",
+    notes: opts.notes || "",
+  };
+}
+
+// ============================================================
 // EXPORTS
 // ============================================================
 
@@ -1212,6 +1640,12 @@ module.exports = {
   SLIDE,
   FONT,
   themeColours,
+  CHROME,
+
+  // Icon system
+  initIcons,
+  icon,
+  softShadow,
 
   // Slide definition helpers
   titleSlide,
@@ -1235,6 +1669,20 @@ module.exports = {
   objectivesSlide,
   summarySlide,
 
+  // Rich layout helpers (Claude-inspired)
+  lessonTitleSlide,
+  roadmapSlide,
+  numberedIntentsSlide,
+  comparisonColumnsSlide,
+  mcqCardSlide,
+  processStepsSlide,
+  stepStripSlide,
+  taskCardsSlide,
+  keyIdeaSlide,
+  wrapUpSlide,
+  successCriteriaPanel,
+  calloutStrip,
+
   // E5 Instructional Model helpers
   E5_THEME,
   e5LearningIntentionSlide,
@@ -1243,6 +1691,7 @@ module.exports = {
   e5ExplainSlide,
   e5ElaborateSlide,
   e5EvaluateSlide,
+  e5ContinuationSlide,
   e5LessonPlan,
 
   // Rich text helpers
