@@ -60,7 +60,9 @@ What format should the resource be?
 - [ ] **Lab/practical intro** (5–10 slides: safety, procedure, checklist)
 - [ ] **Other** (describe): ___________
 
-> **If E5 lesson deck is chosen**, each lesson follows this 5-phase sequence with colour-coded phase dividers. Use `C.e5LessonPlan()` for rapid 5-phase lessons, or individual `C.e5EngageSlide()`, `C.e5ExploreSlide()`, etc. when you need more control. See `PPTX_BUILDER_REFERENCE.md` Section 10.
+> **If E5 lesson deck is chosen**, each lesson follows this 5-phase sequence with colour-coded phase dividers. Use `C.e5LessonPlan()` for rapid 5-phase lessons, or individual `C.e5EngageSlide()`, `C.e5ExploreSlide()`, etc. when you need more control. See `PPTX_BUILDER_REFERENCE.md` Section 10 for the technical helpers.
+>
+> **📘 MANDATORY: Before drafting any E5 slide content, read `E5_MODEL_BIBLE.md` end-to-end.** That file is the pedagogical reference — it tells you what GOOD content looks like in each phase, the common failure modes that make E5 decks feel hollow, and the cross-phase quality gate to run before declaring the deck done. `PPTX_BUILDER_REFERENCE.md` covers *how* to render the slides; `E5_MODEL_BIBLE.md` covers *what to put inside them*. Both are required reading for E5 work.
 
 ---
 
@@ -782,6 +784,7 @@ Tell the user:
 8. **For PPTX:** Each slide definition object = one slide. Answers and teaching notes go into **speaker notes**, not separate files. Use `C.customSlide()` only as a last resort.
 9. **ALWAYS spread array-returning helpers.** Some `C.*` helpers return arrays, not single elements. You MUST spread them with `...` when pushing into your content array, or the DOCX/PPTX will silently corrupt. The builders will now detect and refuse to build if this happens, but the right fix is to spread them correctly from the start.
 10. **Every checked companion-worksheet type MUST appear as a distinct activity.** When the user selects question types for a companion DOCX worksheet, do not skip, merge, or drop any checked type. If 10 types are checked, the worksheet must have at least 10 corresponding activities. The only exception: adapt "code-writing by hand" to the subject (e.g. circuit design) rather than omit it.
+11. **For E5 decks, `E5_MODEL_BIBLE.md` is mandatory reading.** Open it before drafting Engage/Explore/Explain/Elaborate/Evaluate content. Run the cross-phase quality gate (Section 11 of the bible) before building. Skipping the bible produces decks that look like E5 but don't behave like E5 pedagogically.
 
    **DOCX helpers that return arrays (spread with `...`):**
    - `C.linedAnswerSpace(n)` → `content.push(...C.linedAnswerSpace(3))`
