@@ -4,7 +4,7 @@ download_image.py — Reliable image downloader for teaching resource images.
 
 Usage:
   python tools/download_image.py <URL> <output_path> [--referer <url>]
-  python tools/download_image.py --scrape <page_url> <output_path>
+  python tools/download_image.py --scrape <URL> <output_path>
 
 Sources supported:
     - Any direct image URL (via requests with browser UA)
@@ -28,6 +28,29 @@ from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
+
+
+def _detect_image_format(data):
+    """Return a short format name (png/jpeg/gif/webp/bmp/tiff/svg) or None."""
+    if len(data) < 4:
+        return None
+    head = data[:32]
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if head[:3] == b"\xff\xd8\xff":
+        return "jpeg"
+    if head[:6] in (b"GIF87a", b"GIF89a"):
+        return "gif"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "webp"
+    if head[:2] == b"BM":
+        return "bmp"
+    if head[:4] in (b"II*\x00", b"MM\x00*"):
+        return "tiff"
+    stripped = head.lstrip()
+    if stripped.startswith(b"<svg") or stripped.startswith(b"<?xml"):
+        return "svg"
+    return None
 
 # ── Browser-like headers to avoid 403/429 blocks ──────────────────────────
 HEADERS = {
@@ -69,16 +92,23 @@ def download_direct(url, out_path, headers=None, timeout=30):
             print(f"FAIL (not an image): got {ct} from {url}", file=sys.stderr)
             return False
 
+        # Read the full response (small enough for teaching images)
+        data = resp.content
+
         # Double-check: if content starts with <!DOCTYPE or <html, it's HTML
-        chunk = resp.content[:200]
-        if chunk.strip().startswith(b"<!DOCTYPE") or chunk.strip().startswith(b"<html") or chunk.strip().startswith(b"<!"):
+        head = data[:200]
+        if head.strip().startswith(b"<!DOCTYPE") or head.strip().startswith(b"<html") or head.strip().startswith(b"<!"):
             print(f"FAIL (not an image): response is HTML", file=sys.stderr)
+            return False
+
+        # Magic-byte validation
+        if _detect_image_format(data) is None:
+            print(f"FAIL (not an image): unrecognised file format", file=sys.stderr)
             return False
 
         Path(os.path.dirname(out_path) or ".").mkdir(parents=True, exist_ok=True)
         with open(out_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                f.write(chunk)
+            f.write(data)
 
         size_kb = os.path.getsize(out_path) / 1024
         print(f"OK: {out_path} ({size_kb:.1f} KB)")
@@ -86,7 +116,21 @@ def download_direct(url, out_path, headers=None, timeout=30):
 
     except requests.RequestException as e:
         print(f"FAIL (direct): {e}", file=sys.stderr)
+        _clean_partial(out_path)
         return False
+    except Exception as e:
+        print(f"FAIL (direct): {e}", file=sys.stderr)
+        _clean_partial(out_path)
+        return False
+
+
+def _clean_partial(path):
+    """Remove a partially-downloaded file if it exists."""
+    try:
+        if os.path.exists(path):
+            os.unlink(path)
+    except OSError:
+        pass
 
 
 # ── Source-specific scrapers ──────────────────────────────────────────────
@@ -244,7 +288,12 @@ def scrape_phil(page_url, out_path):
     """
     match = re.search(r"pid=(\d+)", page_url, re.IGNORECASE)
     if not match:
-        match = re.search(r"/(\d+)(?:\D|$)", page_url)
+        # Fallback: last numeric segment in the path when no pid= param
+        path_parts = urlparse(page_url).path.rstrip("/").split("/")
+        for part in reversed(path_parts):
+            if part.isdigit():
+                match = re.match(r"(\d+)", part)
+                break
     if not match:
         print("FAIL (PHIL): could not determine image id from URL", file=sys.stderr)
         return False
@@ -265,7 +314,6 @@ def browser_fallback(url, out_path):
     host = (urlparse(url).hostname or "").lower()
     screenshot_hosts = (
         "desmos.com",
-        "tinkercad.com",
     )
     download_hosts = (
         "openstax.org",
@@ -278,6 +326,7 @@ def browser_fallback(url, out_path):
         "loc.gov",
         "davidrumsey.com",
         "fritzing.org",
+        "tinkercad.com",
     )
 
     if any(domain in host for domain in blocked_hosts):
@@ -336,8 +385,15 @@ def main():
     args = parser.parse_args()
 
     url = args.url
-    out_path = args.output
+    out_path = os.path.abspath(args.output)
     scrape_mode = args.scrape
+
+    # Path bounds check — reject paths outside the project root
+    project_root = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    if not out_path.startswith(project_root + os.sep):
+        print(f"FAIL (security): output path {out_path} is outside project root {project_root}", file=sys.stderr)
+        sys.exit(1)
+
     extra_headers = {}
     if args.referer:
         extra_headers["Referer"] = args.referer

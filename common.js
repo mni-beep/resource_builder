@@ -274,6 +274,7 @@ function scaffoldStep(n, prompt, hint) {
 }
 
 // ---- LINED ANSWER SPACE ----
+// Returns Paragraph[] — spread with ...C.linedAnswerSpace(3)
 function linedAnswerSpace(count) {
   return Array.from({ length: count }, () =>
     new Paragraph({

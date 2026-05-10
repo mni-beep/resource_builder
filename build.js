@@ -12,8 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, BorderStyle, WidthType, ShadingType,
-  HeadingLevel, PageBreak
+  AlignmentType, BorderStyle, WidthType, ShadingType
 } = require('docx');
 
 // ---- Load resource configuration ----
@@ -195,7 +194,6 @@ function loadContentModules(contentDir) {
   const allContent = [];
 
   for (const file of files) {
-    const modulePath = path.join(contentDir, file);
     // require() needs ./ or ../ prefix for relative paths
     const requirePath = './' + path.join(contentDir, file).replace(/\\/g, '/');
     try {
@@ -213,6 +211,7 @@ function loadContentModules(contentDir) {
       console.log(`  ✓ ${file}`);
     } catch (err) {
       console.error(`  ✗ Error loading ${file}: ${err.message}`);
+      console.error(err.stack);
       process.exit(1);
     }
   }
@@ -220,18 +219,9 @@ function loadContentModules(contentDir) {
   console.log(`  Total elements assembled: ${allContent.length}\n`);
 
   // ---- VALIDATION: detect nested arrays (missing spread on multi-element helpers) ----
-  const badIndices = [];
-  allContent.forEach((el, i) => {
-    if (Array.isArray(el)) badIndices.push(i);
-    else if (el === undefined || el === null) badIndices.push(i);
-  });
-  if (badIndices.length > 0) {
-    console.error(`  ✗ CORRUPTION DETECTED — ${badIndices.length} element(s) at indices ${badIndices.slice(0, 10).join(', ')} are arrays or null/undefined.`);
-    console.error('    Likely cause: missing spread operator (...) on a helper that returns an array.');
-    console.error('    Check calls to C.linedAnswerSpace(), C.drawingSpace(), C.lessonBanner(), C.mcQuestion().');
-    console.error('    Each should be spread: ...C.linedAnswerSpace(3), not C.linedAnswerSpace(3),');
-    process.exit(1);
-  }
+  const { validateContentArray } = require('./tools/validate');
+  validateContentArray(allContent, "element",
+    "linedAnswerSpace(), drawingSpace(), lessonBanner(), mcQuestion()");
 
   return allContent;
 }

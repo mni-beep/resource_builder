@@ -16,7 +16,7 @@ If you are an AI agent asked to build a teaching resource from this project, her
 3. **Do NOT edit `build.js` or `common.js`** — they are stable infrastructure.
 4. **Run** `node build.js` to generate the `.docx` output.
 
-Every content module exports `function(C, H) → array`. Use `C.*` for all formatting (headings, paragraphs, callout boxes, questions, scaffolding). Use `H.*` for table cells. See the Cheat Sheet (Section 12) for every function signature.
+Every content module exports `function(C, H) → array`. Use `C.*` for all formatting (headings, paragraphs, callout boxes, questions, scaffolding). Use `H.*` for table cells. See the Cheat Sheet (Section 14) for every function signature.
 
 ---
 
@@ -29,6 +29,8 @@ Every content module exports `function(C, H) → array`. Use `C.*` for all forma
 5. [H — Local Helpers (defined in build script)](#5-h--local-helpers-defined-in-build-script)
 6. [Document Assembly](#6-document-assembly)
 7. [Content Module Template](#7-content-module-template)
+8. [Booklet Lesson Structure](#8-booklet-lesson-structure-pedagogical-template)
+9. [Teacher Edition Patterns](#9-teacher-edition-patterns)
 10. [Scaffolding Patterns Catalogue](#10-scaffolding-patterns-catalogue)
 11. [Practical-on-Paper Patterns](#11-practical-on-paper-patterns)
 12. [Colour & Sizing Conventions](#12-colour--sizing-conventions)
@@ -1260,7 +1262,7 @@ Pre-built tables with some cells pre-filled and others containing `_____________
 
 ## 11. Practical-on-Paper Patterns
 
-### 9.1 Spot-the-Break / Identify Activity
+### 11.1 Spot-the-Break / Identify Activity
 
 A table where students judge circuit scenarios:
 
@@ -1279,14 +1281,14 @@ A table where students judge circuit scenarios:
 
 **Column widths:** `[4800, 1200, 1200, 2160]` (total 9360)
 
-### 9.2 Sketch a Circuit (Scaffolded Build)
+### 11.2 Sketch a Circuit (Scaffolded Build)
 
 Three-phase structure:
 1. **STEP 1 — Study the worked example:** A diagram rendered with monospaced text (`font: "Consolas"`) inside a bordered/shaded table cell, with labelled parts
 2. **STEP 2 — Draw your own:** A checklist of required elements + a `C.drawingSpace()` box
 3. Conventional current flow direction labelled with italic grey text
 
-### 9.3 ASCII Circuit Diagrams
+### 11.3 ASCII Circuit Diagrams
 
 Circuits are drawn using box-drawing characters in Consolas font inside a single table cell with light background:
 
@@ -1315,7 +1317,7 @@ new TableCell({
 - `├` left T-junction
 - `┤` right T-junction
 
-### 9.4 Row Height Control
+### 11.4 Row Height Control
 
 For diagram cells, set an explicit minimum row height:
 ```js
@@ -1330,7 +1332,7 @@ Value is in DXA. 2880 DXA ≈ 2 inches.
 
 ## 12. Colour & Sizing Conventions
 
-### 10.1 Colour Palette
+### 12.1 Colour Palette
 
 | Role | Hex | Constant | Used For |
 |---|---|---|---|
@@ -1345,7 +1347,7 @@ Value is in DXA. 2880 DXA ≈ 2 inches.
 | Page background | `#FAFAFA` | — | Diagram cell backgrounds |
 | Medium grey | `#595959` | — | Subtitles, secondary text |
 
-### 10.2 Font Sizes
+### 12.2 Font Sizes
 
 | Element | Size (half-points) | Visual |
 |---|---|---|
@@ -1360,7 +1362,7 @@ Value is in DXA. 2880 DXA ≈ 2 inches.
 | Table header cells | 22 bold | Standard |
 | Consolas (diagrams) | 24 | Monospaced |
 
-### 10.3 Spacing
+### 12.3 Spacing
 
 | Element | Spacing |
 |---|---|

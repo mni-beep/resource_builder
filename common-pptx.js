@@ -484,46 +484,50 @@ function _e5RenderChrome(slide, def) {
   const ec = def._e5;
   if (!ec) return;
   const T = E5_THEME;
-  const pc = _phaseColours(ec.phase);  // phase-aware colours
+  const pc = _phaseColours(ec.phase);  // phase-aware default colours
 
-  // 1. Skill label (top-left) — now uses navy colour for richer look
+  // 1. Skill label (top-left) — uses theme colour, fallback to navy
   if (ec.skillLabel) {
     slide.addText(ec.skillLabel, {
       x: T.skillLabel.x, y: T.skillLabel.y, w: T.skillLabel.w, h: T.skillLabel.h,
       fontSize: T.skillLabel.fontSize, fontFace: T.skillLabel.fontFace,
-      color: COLOURS.navy,
+      color: T.skillLabel.color || COLOURS.navy,
     });
   }
 
-  // 2. Phase button (top-right) — coloured per phase
+  // 2. Phase button (top-right) — honour T.phaseButton.fill/textColor if set, else use phase defaults
   if (ec.phase) {
     const pb = T.phaseButton;
+    const btnFill = pb.fill || pc.fill;
+    const btnTextColor = pb.textColor || pc.text;
     slide.addShape("roundRect", {
       x: pb.x, y: pb.y, w: pb.w, h: pb.h,
-      fill: { color: pc.fill },
+      fill: { color: btnFill },
       rectRadius: pb.rectRadius || 0.08,
       shadow: T.cardShadow,
     });
     slide.addText(ec.phase, {
       x: pb.x, y: pb.y, w: pb.w, h: pb.h,
       fontSize: pb.fontSize, fontFace: pb.fontFace,
-      color: pc.text, italic: pb.italic, bold: pb.bold,
+      color: btnTextColor, italic: pb.italic, bold: pb.bold,
       align: "center", valign: "middle",
     });
   }
 
-  // 3. SM bar (bottom) — tinted per phase (light colour)
+  // 3. SM bar (bottom) — honour T.smBar.fill/textColor if set, else use phase light colour
   if (ec.smText) {
     const sb = T.smBar;
     const barY = T.slideH - sb.height;
+    const smFill = sb.fill || pc.light;
+    const smTextColor = sb.textColor || "333333";
     slide.addShape("rect", {
       x: 0, y: barY, w: "100%", h: sb.height,
-      fill: { color: pc.light },
+      fill: { color: smFill },
     });
     slide.addText("SM: " + ec.smText, {
       x: 0.5, y: barY + 0.08, w: "92%", h: sb.height - 0.16,
       fontSize: sb.fontSize, fontFace: sb.fontFace,
-      color: "333333", bold: sb.bold,
+      color: smTextColor, bold: sb.bold,
       valign: "middle",
     });
   }
@@ -557,7 +561,6 @@ function e5LearningIntentionSlide(skillLabel, intention, measures = {}) {
     _e5Intent: { skillLabel, intention, measures },
     render: function (slide, H) {
       const T = E5_THEME;
-      const H_ = slide._slideLayout ? "roundRect" : "rect";
 
       // Left panel — white
       slide.addShape("rect", {
@@ -1241,35 +1244,40 @@ function e5LessonPlan(skillLabel, plan = {}) {
 // VIDEO / YOUTUBE HELPERS
 // ============================================================
 
+const { execFileSync } = require('child_process');
+
 /**
  * Find the yt-dlp executable. Checks:
  *   1. System PATH (just "yt-dlp")
  *   2. Project tools/ directory (tools/yt-dlp.exe on Windows, tools/yt-dlp on Unix)
  *   3. Python module (python -m yt_dlp)
- * @returns {string|null} path to yt-dlp executable, or null if not found
+ * @returns {{ cmd: string, args: string[] }|null} yt-dlp command + base args, or null if not found
  */
 function _findYtDlp() {
   // 1. Try system PATH
   try {
-    execSync('yt-dlp --version', { stdio: 'ignore' });
-    return 'yt-dlp';
+    execFileSync('yt-dlp', ['--version'], { stdio: 'ignore' });
+    return { cmd: 'yt-dlp', args: [] };
   } catch (_) { /* not in PATH */ }
 
   // 2. Try project tools/ directory
-  try {
-    const { execSync: es } = require('child_process');
-    const isWindows = process.platform === 'win32';
-    const toolsPath = path.resolve(__dirname, 'tools', isWindows ? 'yt-dlp.exe' : 'yt-dlp');
-    if (fs.existsSync(toolsPath)) {
-      es(`"${toolsPath}" --version`, { stdio: 'ignore' });
-      return toolsPath;
-    }
-  } catch (_) { /* not in tools/ */ }
+  const isWindows = process.platform === 'win32';
+  const toolsPath = path.resolve(__dirname, 'tools', isWindows ? 'yt-dlp.exe' : 'yt-dlp');
+  if (fs.existsSync(toolsPath)) {
+    try {
+      execFileSync(toolsPath, ['--version'], { stdio: 'ignore' });
+      return { cmd: toolsPath, args: [] };
+    } catch (_) { /* broken binary */ }
+  }
 
   // 3. Try Python module
   try {
-    execSync('python -m yt_dlp --version', { stdio: 'ignore' });
-    return 'python -m yt_dlp';
+    execFileSync('python', ['-m', 'yt_dlp', '--version'], { stdio: 'ignore' });
+    return { cmd: 'python', args: ['-m', 'yt_dlp'] };
+  } catch (_) { /* not a python module */ }
+  try {
+    execFileSync('python3', ['-m', 'yt_dlp', '--version'], { stdio: 'ignore' });
+    return { cmd: 'python3', args: ['-m', 'yt_dlp'] };
   } catch (_) { /* not a python module */ }
 
   return null;
@@ -1289,13 +1297,14 @@ function _findYtDlp() {
 // ---- Internal: check if ffmpeg is available (system PATH or project tools/) ----
 function _hasFfmpeg() {
   try {
-    execSync('ffmpeg -version', { stdio: 'ignore' });
+    execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' });
     return true;
   } catch (_) { /* not in PATH */ }
-  const toolsFfmpeg = path.resolve(__dirname, 'tools', 'ffmpeg.exe');
+  const isWindows = process.platform === 'win32';
+  const toolsFfmpeg = path.resolve(__dirname, 'tools', isWindows ? 'ffmpeg.exe' : 'ffmpeg');
   if (fs.existsSync(toolsFfmpeg)) {
     try {
-      execSync(`"${toolsFfmpeg}" -version`, { stdio: 'ignore' });
+      execFileSync(toolsFfmpeg, ['-version'], { stdio: 'ignore' });
       return true;
     } catch (_) { /* broken binary */ }
   }
@@ -1324,8 +1333,8 @@ function downloadYouTube(url, outputDir, opts = {}) {
 
   const outputPath = path.resolve(outDir, `${videoId}.mp4`);
 
-  // Skip if already downloaded
-  if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+  // Skip if already downloaded (check > 50 KB to avoid keeping truncated files)
+  if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 50 * 1024) {
     console.log(`  📹 Using cached video: ${outputPath}`);
     return outputPath;
   }
@@ -1350,12 +1359,22 @@ function downloadYouTube(url, outputDir, opts = {}) {
       ? `bestvideo[height<=${maxHeight}][vcodec^=avc1]+bestaudio[ext=m4a]/best[height<=${maxHeight}][ext=mp4]/best[height<=${maxHeight}]`
       : `best[height<=${maxHeight}][ext=mp4]/best[height<=${maxHeight}]`;
 
-    const recodeFlag = hasFfmpeg ? '--recode-video mp4' : '';
+    // Build args array (no shell injection — execFileSync passes args directly)
+    const args = [
+      '-f', formatStr,
+      '--merge-output-format', 'mp4',
+      '-o', outputPath,
+      url,
+    ];
+    if (hasFfmpeg) {
+      args.splice(args.indexOf('--merge-output-format'), 0, '--recode-video', 'mp4');
+    }
 
-    execSync(
-      `${ytDlp} --js-runtimes node -f "${formatStr}" --merge-output-format mp4 ${recodeFlag} -o "${outputPath}" "${url}"`,
-      { stdio: 'inherit', timeout, maxBuffer: 10 * 1024 * 1024 }
-    );
+    execFileSync(ytDlp.cmd, [...ytDlp.args, ...args], {
+      stdio: 'inherit',
+      timeout,
+      maxBuffer: 10 * 1024 * 1024,
+    });
     const sizeMB = (fs.statSync(outputPath).size / (1024 * 1024)).toFixed(1);
     console.log(`  ✓ Downloaded: ${outputPath} (${sizeMB} MB)`);
     return outputPath;

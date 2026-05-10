@@ -1,8 +1,8 @@
 {
   "type": "pptx",
-  "title": "Exploring the 5 Kingdoms of Life — Year 7 Science",
+  "title": "Circuit Components — Year 9 Science",
   "creator": "Science Department",
-  "outputFile": "./output/5-kingdoms-e5-lesson.pptx",
-  "contentDir": "./content/5-kingdoms-e5-lesson",
+  "outputFile": "./output/circuit-components-e5-deck.pptx",
+  "contentDir": "./content/circuit-components-e5",
   "landscape": true
 }

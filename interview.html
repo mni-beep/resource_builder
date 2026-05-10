@@ -27,7 +27,7 @@
   header p { color: var(--muted); margin-top: 4px; }
 
   .section { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 16px; border-left: 4px solid var(--primary); transition: opacity .2s; }
-  .section.hidden { display: none; }
+  .hidden { display: none; }
   .section h2 { font-size: 1.1rem; margin-bottom: 4px; }
   .section .num { display: inline-block; background: var(--primary); color: #fff; border-radius: 50%; width: 26px; height: 26px; text-align: center; line-height: 26px; font-size: .8rem; font-weight: 700; margin-right: 8px; }
   .section .desc { color: var(--muted); font-size: .85rem; margin-bottom: 14px; }
@@ -574,12 +574,12 @@ function updateVisibility() {
     hide('sec-q4-booklet'); // single worksheet doesn't need booklet Q4
   }
 
-  // Q6: Scaffolding — hide for assessments, unit guides, and "no slide activities" PPTX
-  const pptxNoActivities = (isPptx && isE5 && qval('q4e-ws') === 'none')
-    || (isPptx && isStandardPptx && qval('q4s-ws') === 'none');
+  // Q6: Scaffolding — hide for assessments, unit guides, and PPTX where no worksheet is built
+  const pptxNoWorksheet = (isPptx && isE5 && qval('q4e-ws') !== 'yes')
+    || (isPptx && isStandardPptx && qval('q4s-ws') !== 'yes');
   const skipScaffolding = (isDocx && (isAssessment || isUnitGuide))
     || (isPptx && (isAssessmentPptx))
-    || pptxNoActivities;
+    || pptxNoWorksheet;
   showIf('sec-q6', started && !skipScaffolding);
 
   // Q7: hide header field for PPTX
@@ -731,11 +731,11 @@ function generatePrompt() {
   const q5extras = checkedIds('q5-').join(', ');
   if (q5extras) lines.push(`Additional question types: ${q5extras}`);
 
-  // Q6 — skip for DOCX assessments/unit-guides, PPTX assessment walkthroughs, and PPTX "no activities"
-  const genPptxNoAct = (isPptx && ((q1p === 'e5' && qval('q4e-ws') === 'none') || (q1p === 'standard' && qval('q4s-ws') === 'none')));
+  // Q6 — skip for DOCX assessments/unit-guides, PPTX assessment walkthroughs, and PPTX where no companion worksheet is built
+  const genPptxNoWs = (isPptx && ((q1p === 'e5' && qval('q4e-ws') !== 'yes') || (q1p === 'standard' && qval('q4s-ws') !== 'yes')));
   const genSkipScaff = (isDocx && (q1d === 'assessment' || q1d === 'unitguide'))
     || (isPptx && q1p === 'assessment-pptx')
-    || genPptxNoAct;
+    || genPptxNoWs;
   if (!genSkipScaff) {
     const q6val = qval('q6');
     if (q6val) lines.push(`Scaffolding: ${q6val}`);

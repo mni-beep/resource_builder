@@ -40,18 +40,30 @@ try {
 /**
  * Normalize an array of text items into pptxgenjs TextProps format.
  * pptxgenjs requires { text, options } objects; plain strings cause errors.
+ * Also handles richBullet format: { runs: [...] } → unpacked into text array.
  */
 function toTextProps(items, defaultOpts = {}) {
   if (!Array.isArray(items)) return items;
-  return items.map(item => {
+  const out = [];
+  for (const item of items) {
     if (typeof item === 'string') {
-      return { text: item, options: { ...defaultOpts } };
+      out.push({ text: item, options: { ...defaultOpts } });
+    } else if (item && typeof item.runs === 'object' && !Array.isArray(item.runs)) {
+      // Single richRun object: { text, bold?, italic?, color?, fontSize? }
+      const r = item.runs;
+      out.push({ text: r.text || '', options: { ...defaultOpts, bold: r.bold, italic: r.italic, color: r.color, fontSize: r.fontSize } });
+    } else if (item && Array.isArray(item.runs)) {
+      // richBullet format: { runs: [{ text, bold?, italic?, color?, fontSize? }] }
+      for (const r of item.runs) {
+        out.push({ text: r.text || '', options: { ...defaultOpts, bold: r.bold, italic: r.italic, color: r.color, fontSize: r.fontSize } });
+      }
+    } else if (item && typeof item.text === 'string') {
+      out.push({ text: item.text, options: { ...defaultOpts, ...(item.options || {}) } });
+    } else {
+      out.push({ text: String(item), options: { ...defaultOpts } });
     }
-    if (item && typeof item.text === 'string') {
-      return { text: item.text, options: { ...defaultOpts, ...(item.options || {}) } };
-    }
-    return { text: String(item), options: { ...defaultOpts } };
-  });
+  }
+  return out;
 }
 
 /**
@@ -159,18 +171,9 @@ function loadContentModules(contentDir) {
   console.log(`  Total slides: ${allSlides.length}\n`);
 
   // ---- VALIDATION: detect nested arrays or corrupt slide definitions ----
-  const badIndices = [];
-  allSlides.forEach((el, i) => {
-    if (Array.isArray(el)) badIndices.push(i);
-    else if (el === undefined || el === null) badIndices.push(i);
-    else if (typeof el !== 'object') badIndices.push(i);
-  });
-  if (badIndices.length > 0) {
-    console.error(`  ✗ CORRUPTION DETECTED — ${badIndices.length} element(s) at indices ${badIndices.slice(0, 10).join(', ')} are invalid.`);
-    console.error('    Likely cause: missing spread operator (...) on a helper that returns an array.');
-    console.error('    Each slide helper returns a single slide definition object — arrays should be spread.');
-    process.exit(1);
-  }
+  const { validateContentArray } = require('./tools/validate');
+  validateContentArray(allSlides, "slide",
+    "e5LessonPlan(), linedAnswerSpace()");
 
   return allSlides;
 }
@@ -190,14 +193,15 @@ function hexToRGB(hex) {
 // CHROME RENDERER — adds corner marks, lesson chips, footers
 // ============================================================
 
-function renderChrome(slide, def, slideNum, totalSlides) {
+function renderChrome(slide, def, slideNum, totalSlides, slideW) {
   const ch = def.chrome;
   if (!ch) return;
+  const sw = slideW || 10;  // default to 10" for backward compatibility
 
-  // Corner mark (top-right bracket)
+  // Corner mark (top-right bracket) — positioned relative to slide width
   if (ch.cornerMark) {
     const cm = C.CHROME.cornerMark;
-    const x = 9.55, y = 0.25;
+    const x = sw - 0.45, y = 0.25;
     slide.addShape("rect", { x, y, w: cm.w, h: cm.h, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
     slide.addShape("rect", { x: x + cm.w + cm.gap, y, w: cm.h, h: cm.w, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
   }
@@ -213,13 +217,13 @@ function renderChrome(slide, def, slideNum, totalSlides) {
     });
     if (ch.lessonTitle) {
       slide.addText(ch.lessonTitle, {
-        x: 1.7, y: 0.27, w: 7, h: 0.28,
+        x: 1.7, y: 0.27, w: sw - 3.0, h: 0.28,
         fontSize: 10, fontFace: C.FONT.body, color: C.COLOURS.muted, charSpacing: 1,
         align: "left", valign: "middle", margin: 0
       });
     }
     // Thin separator under header
-    slide.addShape("line", { x: 0.5, y: 0.62, w: 9.0, h: 0,
+    slide.addShape("line", { x: 0.5, y: 0.62, w: sw - 1.0, h: 0,
       line: { color: C.COLOURS.rule, width: 0.75 } });
   }
 
@@ -228,22 +232,29 @@ function renderChrome(slide, def, slideNum, totalSlides) {
     const ft = C.CHROME.footer;
     const footerText = ch.footerText || "";
     slide.addText(footerText, {
-      x: 0.5, y: 5.32, w: 6, h: 0.22,
+      x: 0.5, y: 5.32, w: sw - 4.0, h: 0.22,
       fontSize: ft.fontSize, fontFace: ft.fontFace, color: ft.color, italic: ft.italic,
       align: "left", valign: "middle", margin: 0
     });
     slide.addText(`${slideNum} / ${totalSlides || '?'}`, {
-      x: 8.7, y: 5.32, w: 1.0, h: 0.22,
+      x: sw - 1.3, y: 5.32, w: 1.0, h: 0.22,
       fontSize: ft.fontSize, fontFace: ft.fontFace, color: ft.color,
       align: "right", valign: "middle", margin: 0
     });
   }
 
-  // Speaker notes
-  if (def.notes) slide.addNotes(def.notes);
+  // Speaker notes — build single notes string (pptxgenjs addNotes REPLACES, not appends)
+  // Prefer def._notesText (pre-built by the renderer) over raw def.notes
+  if (def._notesText) {
+    slide.addNotes(def._notesText);
+  } else if (def.notes) {
+    slide.addNotes(def.notes);
+  }
 }
 
-function renderSlide(pptx, def, slideNum, totalSlides) {
+function renderSlide(pptx, def, slideNum, totalSlides, slideW, slideH) {
+  const sw = slideW || 10;
+  const sh = slideH || 7.5;
   try {
     switch (def.type) {
 
@@ -549,16 +560,18 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             valign: "top", lineSpacing: 24
           });
         }
-        // Hidden answer in speaker notes
+        // Build single notes string (pptxgenjs addNotes REPLACES, not appends)
+        const nytNotes = [];
         if (def.answers && def.answers.length > 0) {
-          slide.addNotes("👇 ANSWERS (for teacher):\n" + def.answers.map((a, i) => `  ${i + 1}. ${a}`).join('\n'));
+          nytNotes.push("👇 ANSWERS (for teacher):\n" + def.answers.map((a, i) => `  ${i + 1}. ${a}`).join('\n'));
         }
+        if (def.notes) nytNotes.push(def.notes);
+        if (nytNotes.length > 0) slide.addNotes(nytNotes.join('\n\n'));
         slide.addText("Try this on your own. Check your answers with your teacher.", {
           x: 0.7, y: 4.5, w: "86%", h: 0.5,
           fontSize: 14, italic: true, color: C.COLOURS.greyText,
           fontFace: C.FONT.body
         });
-        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -592,10 +605,11 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             fontFace: C.FONT.body
           });
         }
-        // Answer in speaker notes
-        if (def.answer) {
-          slide.addNotes(`✓ Answer: ${def.answer}`);
-        }
+        // Answer + notes in speaker notes (single addNotes call — pptxgenjs replaces)
+        const mcNotes = [];
+        if (def.answer) mcNotes.push(`✓ Answer: ${def.answer}`);
+        if (def.notes) mcNotes.push(def.notes);
+        if (mcNotes.length > 0) slide.addNotes(mcNotes.join('\n\n'));
         break;
       }
 
@@ -657,11 +671,29 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
           });
         }
         // Planning steps
+        let contentY = 2.0;
         if (def.planningSteps && def.planningSteps.length > 0) {
           const steps = def.planningSteps.map((s, i) => `Step ${i + 1}: ${s}`);
           slide.addText(toTextProps(steps, { bullet: true }), {
-            x: 0.7, y: 2.0, w: "86%", h: 2.5,
+            x: 0.7, y: contentY, w: "86%", h: 2.0,
             fontSize: 14,
+            fontFace: C.FONT.body, valign: "top",
+            lineSpacing: 20
+          });
+          contentY += def.planningSteps.length * 0.4 + 0.3;
+        }
+        // Sentence starters (rendered below planning steps)
+        if (def.sentenceStarters && def.sentenceStarters.length > 0) {
+          slide.addText("Sentence starters:", {
+            x: 0.7, y: contentY, w: "86%", h: 0.4,
+            fontSize: 13, bold: true, italic: true, color: C.COLOURS.greyText,
+            fontFace: C.FONT.body
+          });
+          contentY += 0.4;
+          const starterItems = def.sentenceStarters.map(s => typeof s === 'string' ? s : s.text || '');
+          slide.addText(toTextProps(starterItems, { bullet: true }), {
+            x: 0.9, y: contentY, w: "82%", h: 2.0,
+            fontSize: 13, italic: true, color: C.COLOURS.greyText,
             fontFace: C.FONT.body, valign: "top",
             lineSpacing: 20
           });
@@ -729,6 +761,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             lineSpacing: 28
           });
         }
+        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -752,6 +785,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             valign: "top", lineSpacing: 32
           });
         }
+        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -818,6 +852,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             align: "center", fontFace: C.FONT.body
           });
         }
+        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -843,6 +878,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             align: "center", fontFace: C.FONT.body
           });
         }
+        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -871,6 +907,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             lineSpacing: 30
           });
         }
+        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -891,6 +928,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             lineSpacing: 28
           });
         }
+        if (def.notes) slide.addNotes(def.notes);
         break;
       }
 
@@ -900,7 +938,10 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
         if (typeof def.render === 'function') {
           def.render(slide, H);
         }
-        renderChrome(slide, def, slideNum, totalSlides);
+        // Skip renderChrome for E5 slides and others that set chrome === false
+        if (def.chrome !== false) {
+          renderChrome(slide, def, slideNum, totalSlides, sw);
+        }
         break;
       }
 
@@ -913,13 +954,15 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.navy };
 
-        // Decorative grid
-        for (let i = 0; i < 11; i++) {
-          slide.addShape("line", { x: i * 1.0, y: 0, w: 0, h: 5.625,
+        // Decorative grid — spans full slide width
+        const gridCols = Math.ceil(sw);
+        for (let i = 0; i < gridCols + 1; i++) {
+          slide.addShape("line", { x: i * 1.0, y: 0, w: 0, h: sh,
             line: { color: def.accentColor || C.COLOURS.cyan, width: 0.4, transparency: 85 } });
         }
-        for (let j = 0; j < 7; j++) {
-          slide.addShape("line", { x: 0, y: j * 1.0, w: 10, h: 0,
+        const gridRows = Math.ceil(sh);
+        for (let j = 0; j < gridRows; j++) {
+          slide.addShape("line", { x: 0, y: j * 1.0, w: sw, h: 0,
             line: { color: def.accentColor || C.COLOURS.cyan, width: 0.4, transparency: 85 } });
         }
 
@@ -934,7 +977,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
 
         // Big title
         slide.addText(def.title, {
-          x: 0.6, y: 1.2, w: 9, h: 1.0,
+          x: 0.6, y: 1.2, w: sw - 1.2, h: 1.0,
           fontSize: 44, fontFace: C.FONT.heading, color: C.COLOURS.white, bold: true, margin: 0
         });
 
@@ -964,8 +1007,8 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             fontSize: 9, fontFace: C.FONT.body, color: def.accentColor || C.COLOURS.cyan, charSpacing: 3, margin: 0
           });
         }
-        slide.addText(`${slideNum} / ?`, {
-          x: 8.7, y: 5.32, w: 1.0, h: 0.22,
+        slide.addText(`${slideNum} / ${totalSlides || '?'}`, {
+          x: sw - 1.3, y: 5.32, w: 1.0, h: 0.22,
           fontSize: 9, fontFace: C.FONT.body, color: C.COLOURS.cyanLight, align: "right", margin: 0
         });
         if (def.notes) slide.addNotes(def.notes);
@@ -978,8 +1021,9 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
         slide.background = { fill: C.COLOURS.white };
         // Corner mark
         const cm = C.CHROME.cornerMark;
-        slide.addShape("rect", { x: 9.55, y: 0.25, w: cm.w, h: cm.h, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
-        slide.addShape("rect", { x: 9.71, y: 0.25, w: cm.h, h: cm.w, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
+        const cmX = sw - 0.45;
+        slide.addShape("rect", { x: cmX, y: 0.25, w: cm.w, h: cm.h, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
+        slide.addShape("rect", { x: cmX + cm.w + cm.gap, y: 0.25, w: cm.h, h: cm.w, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
 
         // Eyebrow
         if (def.eyebrow) {
@@ -1040,8 +1084,8 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
           });
         }
         // Footer
-        slide.addText("", { x: 0.5, y: 5.32, w: 6, h: 0.22, fontSize: 9, fontFace: C.FONT.body, color: C.COLOURS.muted, italic: true, margin: 0 });
-        slide.addText(`${slideNum} / ?`, { x: 8.7, y: 5.32, w: 1.0, h: 0.22, fontSize: 9, fontFace: C.FONT.body, color: C.COLOURS.muted, align: "right", margin: 0 });
+        slide.addText("", { x: 0.5, y: 5.32, w: sw - 4.0, h: 0.22, fontSize: 9, fontFace: C.FONT.body, color: C.COLOURS.muted, italic: true, margin: 0 });
+        slide.addText(`${slideNum} / ${totalSlides || '?'}`, { x: sw - 1.3, y: 5.32, w: 1.0, h: 0.22, fontSize: 9, fontFace: C.FONT.body, color: C.COLOURS.muted, align: "right", margin: 0 });
         if (def.notes) slide.addNotes(def.notes);
         break;
       }
@@ -1052,13 +1096,13 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
         slide.background = { fill: C.COLOURS.white };
         // Corner mark
         const cm = C.CHROME.cornerMark;
-        slide.addShape("rect", { x: 9.55, y: 0.25, w: cm.w, h: cm.h, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
-        slide.addShape("rect", { x: 9.71, y: 0.25, w: cm.h, h: cm.w, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
+        slide.addShape("rect", { x: sw - 0.45, y: 0.25, w: cm.w, h: cm.h, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
+        slide.addShape("rect", { x: sw - 0.29, y: 0.25, w: cm.h, h: cm.w, fill: { color: cm.color }, line: { color: cm.color, width: 0 } });
 
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         slide.addText(def.title, {
-          x: 0.5, y: 0.85, w: 9, h: 0.6,
+          x: 0.5, y: 0.85, w: sw - 1.0, h: 0.6,
           fontSize: 28, fontFace: C.FONT.heading, color: C.COLOURS.navy, bold: true, margin: 0
         });
 
@@ -1097,10 +1141,10 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
       case "comparisonColumns": {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.white };
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         slide.addText(def.title, {
-          x: 0.5, y: 0.85, w: 9, h: 0.6,
+          x: 0.5, y: 0.85, w: sw - 1.0, h: 0.6,
           fontSize: 26, fontFace: C.FONT.heading, color: C.COLOURS.navy, bold: true, margin: 0
         });
 
@@ -1166,7 +1210,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
       case "mcqCard": {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.white };
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         if (def.eyebrow) {
           slide.addText(def.eyebrow, {
@@ -1219,10 +1263,10 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
       case "processSteps": {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.white };
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         slide.addText(def.title, {
-          x: 0.5, y: 0.85, w: 9, h: 0.55,
+          x: 0.5, y: 0.85, w: sw - 1.0, h: 0.55,
           fontSize: 26, fontFace: C.FONT.heading, color: C.COLOURS.navy, bold: true, margin: 0
         });
         if (def.subtitle) {
@@ -1295,7 +1339,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
       case "stepStrip": {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.white };
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         if (def.eyebrow) {
           slide.addText(def.eyebrow, {
@@ -1362,11 +1406,11 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
       case "taskCards": {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.white };
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         if (def.eyebrow) {
           slide.addText(def.eyebrow, {
-            x: 0.5, y: 0.85, w: 9, h: 0.3,
+            x: 0.5, y: 0.85, w: sw - 1.0, h: 0.3,
             fontSize: 11, fontFace: C.FONT.heading, color: C.COLOURS.cyan, bold: true, charSpacing: 5, margin: 0
           });
         }
@@ -1432,7 +1476,7 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
       case "keyIdea": {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.white };
-        renderChrome(slide, def, slideNum, totalSlides);
+        renderChrome(slide, def, slideNum, totalSlides, sw);
 
         if (def.eyebrow) {
           slide.addText(def.eyebrow, {
@@ -1500,24 +1544,26 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
         const slide = pptx.addSlide();
         slide.background = { fill: C.COLOURS.navy };
 
-        // Decorative grid
-        for (let i = 0; i < 11; i++) {
-          slide.addShape("line", { x: i * 1.0, y: 0, w: 0, h: 5.625,
+        // Decorative grid — spans full slide width
+        const wGridCols = Math.ceil(sw);
+        for (let i = 0; i < wGridCols + 1; i++) {
+          slide.addShape("line", { x: i * 1.0, y: 0, w: 0, h: sh,
             line: { color: C.COLOURS.cyan, width: 0.4, transparency: 90 } });
         }
-        for (let j = 0; j < 7; j++) {
-          slide.addShape("line", { x: 0, y: j * 1.0, w: 10, h: 0,
+        const wGridRows = Math.ceil(sh);
+        for (let j = 0; j < wGridRows; j++) {
+          slide.addShape("line", { x: 0, y: j * 1.0, w: sw, h: 0,
             line: { color: C.COLOURS.cyan, width: 0.4, transparency: 90 } });
         }
 
         if (def.eyebrow) {
           slide.addText(def.eyebrow, {
-            x: 0.6, y: 0.55, w: 8, h: 0.32,
+            x: 0.6, y: 0.55, w: sw - 2.0, h: 0.32,
             fontSize: 11, fontFace: C.FONT.heading, color: C.COLOURS.cyan, bold: true, charSpacing: 5, margin: 0
           });
         }
         slide.addText(def.title, {
-          x: 0.6, y: 0.95, w: 9, h: 0.85,
+          x: 0.6, y: 0.95, w: sw - 1.2, h: 0.85,
           fontSize: 38, fontFace: C.FONT.heading, color: C.COLOURS.white, bold: true, margin: 0
         });
 
@@ -1530,27 +1576,27 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
             slide.addImage({ data: C.icon("check"), x: 0.6, y: y + 0.07, w: 0.28, h: 0.28 });
           }
           slide.addText(t, {
-            x: 1.0, y, w: 8.2, h: 0.45,
+            x: 1.0, y, w: sw - 1.8, h: 0.45,
             fontSize: 18, fontFace: C.FONT.heading, color: C.COLOURS.white, valign: "middle", margin: 0
           });
         });
 
         // Next week banner
         if (def.nextTitle || def.nextText) {
-          slide.addShape("rect", { x: 0.6, y: 4.0, w: 8.8, h: 1.15,
+          slide.addShape("rect", { x: 0.6, y: 4.0, w: sw - 1.2, h: 1.15,
             fill: { color: C.COLOURS.amber }, line: { color: C.COLOURS.amber, width: 0 } });
           slide.addText(def.nextTitle, {
             x: 0.85, y: 4.15, w: 4, h: 0.3,
             fontSize: 11, fontFace: C.FONT.heading, color: C.COLOURS.navy, bold: true, charSpacing: 4, margin: 0
           });
           slide.addText(def.nextText, {
-            x: 0.85, y: 4.42, w: 8.4, h: 0.65,
+            x: 0.85, y: 4.42, w: sw - 1.6, h: 0.65,
             fontSize: 16, fontFace: C.FONT.heading, color: C.COLOURS.navy, bold: true, margin: 0
           });
         }
 
-        slide.addText(`${slideNum} / ?`, {
-          x: 8.7, y: 5.32, w: 1.0, h: 0.22,
+        slide.addText(`${slideNum} / ${totalSlides || '?'}`, {
+          x: sw - 1.3, y: 5.32, w: 1.0, h: 0.22,
           fontSize: 9, fontFace: C.FONT.body, color: C.COLOURS.cyanLight, align: "right", margin: 0
         });
         if (def.notes) slide.addNotes(def.notes);
@@ -1603,8 +1649,10 @@ function renderSlide(pptx, def, slideNum, totalSlides) {
 
   // Render all slides
   const totalSlides = allSlideDefs.length;
+  const slideW = config.landscape ? C.SLIDE.widescreen.w : C.SLIDE.standard.w;
+  const slideH = config.landscape ? C.SLIDE.widescreen.h : C.SLIDE.standard.h;
   allSlideDefs.forEach((def, i) => {
-    renderSlide(pptx, def, i + 1, totalSlides);
+    renderSlide(pptx, def, i + 1, totalSlides, slideW, slideH);
   });
 
   // Write output

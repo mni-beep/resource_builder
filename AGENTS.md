@@ -170,7 +170,9 @@ What format should the resource be?
 > | **Evaluate** | None | Exit ticket / self-assessment — visual would distract. |
 > | **Summary** | None | Bullet takeaway text is sufficient. |
 >
-> **⚠️ HARD RULE — Images vs Videos:** If the user checked open-source images in Question 8 but did NOT request/specify videos, use IMAGES on Engage and Explore slides (not videos). Only use `videoUrl` when the user explicitly checked or requested video content. The `imagePath` parameter on `C.e5EngageSlide()` and `C.e5ExploreSlide()` is the correct way to embed visuals when images are the selected medium.
+> **⚠️ HARD RULE — Images vs Videos:** If the user checked open-source images in Question 8 but did NOT request/specify videos, use IMAGES on Engage and Explore slides first. Only use `videoUrl` when the user explicitly checked or requested video content, OR when all image sources have been exhausted and no relevant image could be found (see fallback chain below). The `imagePath` parameter on `C.e5EngageSlide()` and `C.e5ExploreSlide()` is the correct way to embed visuals when images are the selected medium.
+>
+> **🔁 Image → Video fallback chain:** For Engage and Explore slides (where video is a good alternative), if after exhausting all approved image sources + retries (see Step 3b verification loop) no suitable image is found, the agent MUST fall back to YouTube video search (Step 3c) to find a relevant video. Announce this fallback to the user: "No relevant image found for [slide title] — searching YouTube for a contextual video instead." The fallback order is: images first (all approved sources) → YouTube video → ASCII diagram/mindMap → text-only.
 >
 > **Video embedding:** Pass `videoUrl` and `videoCaption` in the Engage or Explore `opts` object. The builder auto-downloads via `yt-dlp` and embeds the MP4 in the right column. Video takes priority over `imagePath` or `mindMap` on those slides.
 >
@@ -294,9 +296,9 @@ Collect these additional details for the worksheet (YES path only):
 
 ---
 
-### Question 6: SCAFFOLDING INTENSITY (ask for worksheets, booklets)
+### Question 6: SCAFFOLDING INTENSITY (ask for worksheets, booklets, and slide decks with a companion worksheet)
 
-> **Skip for:** assessments, unit guides (assessment scaffolding not applicable; unit guides are teacher planning documents), and PPTX decks where the user chose **"No — no slide activities"** (no tasks to scaffold).
+> **Skip for:** assessments, unit guides (assessment scaffolding not applicable; unit guides are teacher planning documents), and PPTX decks where the user chose **"No"** for the companion worksheet (either "No — slide activities only" or "No — no slide activities"). Scaffolding only applies when a DOCX worksheet is being built — slide-level activities don't use the scaffolding system.
 
 How much support baked in?
 - [ ] Heavy — sentence starters, planning steps, hints pointing to exact answers, hidden answers under every "try it"
@@ -631,28 +633,52 @@ C.p("Figure 1: Cross-section of a chloroplast showing thylakoid stacks (grana)."
 
 Every image placed on a slide or in a DOCX resource must **directly illustrate** what the surrounding text is explaining. A generic or tangentially-related image undermines the teaching resource.
 
-**For each image, confirm ALL of the following before building:**
+> **🤖 Image-aware model verification:** After downloading each image candidate, you MUST verify it using the `view_image` tool together with your own vision capabilities. This is a two-step process:
+>
+> **Step A — View the image:**
+>```
+> view_image(filePath="<absolute-path-to-downloaded-image>")
+>```
+>
+> **Step B — Evaluate relevance against slide context.** Ask yourself these questions about the image you just viewed:
+>
+> | Check | Question | Pass if... |
+> |---|---|---|
+> | 1. **Topic match** | Does the image's subject match the slide's specific topic? | The image shows exactly what the text is talking about — not something broader or narrower. |
+> | 2. **Content accuracy** | Does the image contain the right objects/concepts? | A "circuit components" image should show actual circuit components — not a compass icon or unrelated graphic. |
+> | 3. **Year-level appropriate** | Would a Year 9 student understand this image? | The image is simple enough. Avoid diagrams with 10+ labels for younger year levels. |
+> | 4. **Scope match** | Does the image's scope match what the slide discusses? | Example: a slide about "why classify all life" should not show only animals. |
+> | 5. **No contradiction** | Does the image contradict anything in the slide text? | Check: labels, colours, terminology all match what the text says. |
+>
+> **🔁 Retry loop — keep looking until you find a relevant image:**
+>
+> For each slide that needs an image, follow this escalation ladder. Do NOT settle for an irrelevant image — escalate until you find one that passes all 5 checks above, or exhaust all options:
+>
+> | Attempt | Source / Strategy | Action |
+> |---|---|---|
+> | 1 | Wikimedia Commons | Search with 2–3 different keyword variations on the file page. Use `node tools/browser_image_helper.cjs download` for each. View each with `view_image` and check relevance. |
+> | 2 | OpenStax (if science/maths) | Search OpenStax book pages with `node tools/browser_image_helper.cjs download`. View and check. |
+> | 3 | PhET / USGS / other approved sources | Try screenshots or scraped images. View and check. |
+> | 4 | Rewrite slide text | If a partially-relevant image exists, rewrite the slide text to explicitly bridge the image to the concept (see example below). |
+> | 5 | YouTube video (Engage/Explore only) | If all image sources exhausted, announce the fallback and search YouTube (Step 3c). |
+> | 6 | mindMap (PPTX) or ASCII diagram (DOCX) | Use `mindMap` feature for Explore slides, or box-drawing characters for Explain slides. |
+> | 7 | Text-only slide | Last resort — use no visual. This is acceptable for Elaborate and Evaluate slides. |
+>
+> **Per attempt, try at least 2 search URL variations before declaring that source exhausted.** If an image fails relevance checks, delete it (`Remove-Item`) to avoid clutter and try the next candidate.
+>
+> **Example — FAIL then FIX:**
+> - ❌ Engage slide about "Why classify all life?" + image of animals only → fails check 4
+> - ✅ Fix: Rewrite text to say "Look at the animals on the right. Scientists use the same sorting rules across ALL five kingdoms — not just animals. Classification gives every living thing its place." → bridges image to concept
+>
+> **Example — FAIL then ESCALATE:**
+> - ❌ Downloaded `simple-circuit.png` from Wikimedia Commons → `view_image` shows a compass icon, not a circuit → delete it → try a different Wikimedia Commons file URL
+> - ❌ Second Wikimedia Commons URL also returns wrong image → move to OpenStax
+> - ❌ OpenStax image is about integrated circuits (too advanced for Year 9) → move to PhET screenshot
+> - ✅ PhET screenshot shows a simple circuit with battery, bulb, switch → passes all 5 checks → use it
 
-| Check | Question | Pass if... |
-|---|---|---|
-| 1. **Topic match** | Does the image's subject match the slide/paragraph's specific topic? | The image shows exactly what the text is talking about — not something broader or narrower. |
-| 2. **Text bridge** | Does the slide text or caption explicitly reference the image? | At least one sentence says "Look at the image..." or "The diagram shows..." or "Notice how..." — connecting the visual to the concept. |
-| 3. **Year-level appropriate** | Would a student at this year/reading age understand the image? | The image is simple enough. Avoid diagrams with 10+ labels for Year 7. |
-| 4. **Kingdom/scope match** | If the text discusses ALL five kingdoms, does the image show multiple kingdoms (not just one)? | Example: a slide about "why classify all life" should not show only animals. |
-| 5. **No contradiction** | Does the image contradict anything in the text? | Check: labels, colours, terminology all match what the text says. |
+### Step 3c: Handle YouTube videos (if user requested embedded videos in Question 8, OR as image fallback)
 
-**If any check fails:**
-1. First try to **rewrite the slide text** to bridge the image to the concept
-2. If that doesn't work, **find a better image** from the approved sources
-3. If no suitable image exists, **use the `mindMap` feature** (PPTX) or an **ASCII diagram** (DOCX) instead — never use a mismatched image
-
-**Example — FAIL then FIX:**
-- ❌ Engage slide about "Why classify all life?" + image of animals only → fails check 4
-- ✅ Fix: Rewrite text to say "Look at the animals on the right. Scientists use the same sorting rules across ALL five kingdoms — not just animals. Classification gives every living thing its place." → bridges image to concept
-
-### Step 3c: Handle YouTube videos (if user requested embedded videos in Question 8)
-
-When the user asks for embedded YouTube videos, you MUST search the web for relevant videos rather than use placeholder URLs. **Use the contextual placement guide above to determine which slides should get videos — typically Engage and Explore, not Explain or Evaluate.**
+When the user asks for embedded YouTube videos, OR when image search is exhausted (see Step 3b fallback chain), you MUST search the web for relevant videos rather than use placeholder URLs. **Use the contextual placement guide above to determine which slides should get videos — typically Engage and Explore, not Explain or Evaluate.**
 
 The procedure:
 
@@ -665,7 +691,42 @@ The procedure:
 
 2. **Verify the best match** — navigate to the watch page and confirm the page title contains the expected video title.
 
-3. **Use the video in the content module:**
+3. **🔎 Subtitle download & contextual analysis (MANDATORY — do this before using the video):**
+
+   For each candidate YouTube video (top 3 from search), download and analyze its subtitles to verify contextual relevance before embedding:
+
+   ```powershell
+   # Download auto-generated English subtitles (VTT format) for a candidate video:
+   python -m yt_dlp --write-auto-subs --sub-lang en --skip-download --convert-subs vtt -o "content/videos/sub_%(id)s" "https://www.youtube.com/watch?v=VIDEO_ID"
+   ```
+
+   Or use the project's `yt-dlp` if available at `tools/yt-dlp.exe`:
+   ```powershell
+   .\tools\yt-dlp.exe --write-auto-subs --sub-lang en --skip-download --convert-subs vtt -o "content/videos/sub_%(id)s" "https://www.youtube.com/watch?v=VIDEO_ID"
+   ```
+
+   This downloads ONLY the subtitle file (not the full video), saving bandwidth and time. The `.vtt` file will appear as `content/videos/sub_VIDEO_ID.en.vtt`.
+
+   **Read and analyze the subtitle file** against the slide context:
+   ```
+   read_file(filePath="content/videos/sub_VIDEO_ID.en.vtt")
+   ```
+
+   **Subtitle relevance check — the video passes if:**
+   | Check | Criterion |
+   |---|---|
+   | 1. **Keyword density** | At least 3 slide-relevant terms appear in the first 60 seconds of the transcript. |
+   | 2. **Topic alignment** | The transcript discusses the same concept as the slide — not a tangentially related topic. |
+   | 3. **Year-level language** | The vocabulary and pace match Year 9 readability (no PhD-level jargon). |
+   | 4. **Educational tone** | The video is instructional/educational, not a product review or unboxing. |
+
+   **If the subtitles FAIL any check**, discard that candidate, delete the subtitle file, and try the next search result. If all 3 candidates fail, announce the fallback and move to mindMap / ASCII diagram / text-only.
+
+   **If the subtitles PASS**, proceed to use the video. The builder will download the full MP4 later via `yt-dlp`.
+
+   **Clean up subtitle files** after verification — they are only needed for the relevance check, not for the PPTX build.
+
+4. **Use the video in the content module:**
    ```js
    C.videoSlide("🎬 Watch: Topic Title",
      "https://www.youtube.com/watch?v=REAL_VIDEO_ID",
@@ -675,7 +736,7 @@ The procedure:
    ```
    The builder auto-downloads via `yt-dlp.exe` in `tools/` and caches to `content/videos/`.
 
-4. **If no suitable video found** — tell the user and fall back to a content slide. Never use `YOUR_VIDEO_ID_HERE` as a placeholder.
+5. **If no suitable video found** — tell the user and fall back to a content slide. Never use `YOUR_VIDEO_ID_HERE` as a placeholder.
 
 **What does NOT work:**
 - `fetch_webpage` on YouTube or Google — redirects to login pages, returns no results

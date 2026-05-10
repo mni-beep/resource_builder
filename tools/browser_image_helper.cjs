@@ -224,12 +224,24 @@ async function collectCandidates(page) {
 }
 
 function validateDownload(contentType, buffer) {
+  // Reject HTML/text responses
   if (contentType.includes('html') || contentType.startsWith('text/')) {
     throw new Error(`not an image: ${contentType || 'unknown content type'}`);
   }
   const trimmed = buffer.subarray(0, Math.min(buffer.length, 200)).toString('utf8').trimStart().toLowerCase();
   if (trimmed.startsWith('<!doctype') || trimmed.startsWith('<html') || trimmed.startsWith('<body')) {
     throw new Error('not an image: response body is HTML');
+  }
+  // Verify magic bytes for common image formats
+  const head = buffer.subarray(0, 12);
+  const isPNG  = head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4E && head[3] === 0x47;
+  const isJPEG = head[0] === 0xFF && head[1] === 0xD8 && head[2] === 0xFF;
+  const isWEBP = head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46
+              && head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50;
+  const isGIF  = head[0] === 0x47 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x38;
+  const isSVG  = trimmed.startsWith('<svg') || trimmed.startsWith('<?xml');
+  if (!isPNG && !isJPEG && !isWEBP && !isGIF && !isSVG) {
+    throw new Error('not a recognised image format (expected PNG/JPEG/WEBP/GIF/SVG)');
   }
 }
 
@@ -240,7 +252,8 @@ async function saveDownloadedFile(context, url, outPath, referer) {
   };
 
   if (url.includes('cdn.pixabay.com')) {
-    const curlResult = spawnSync('curl.exe', [
+    const curlBin = process.platform === 'win32' ? 'curl.exe' : 'curl';
+    const curlResult = spawnSync(curlBin, [
       '-L',
       '--fail',
       '-sS',
@@ -297,34 +310,36 @@ async function run() {
   }
 
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    viewport: { width: 1600, height: 1100 },
-    locale: 'en-US',
-    userAgent: BROWSER_HEADERS['User-Agent']
-  });
-
-  const page = await context.newPage();
-  await page.goto(args.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  let context, page;
 
   try {
-    await page.waitForLoadState('networkidle', { timeout: 8000 });
-  } catch (error) {
-    // JS-heavy sites often keep background requests alive; continue with the explicit wait below.
-  }
+    context = await browser.newContext({
+      viewport: { width: 1600, height: 1100 },
+      locale: 'en-US',
+      userAgent: BROWSER_HEADERS['User-Agent']
+    });
 
-  await page.waitForTimeout(args.waitMs);
+    page = await context.newPage();
+    await page.goto(args.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
-  const pageTitle = await page.title();
-  const candidates = await collectCandidates(page);
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 8000 });
+    } catch (error) {
+      // JS-heavy sites often keep background requests alive; continue with the explicit wait below.
+    }
 
-  if (args.mode === 'extract') {
-    console.log(JSON.stringify({ requestedUrl: args.url, url: page.url(), title: pageTitle, candidates }, null, 2));
-    await browser.close();
-    return;
-  }
+    await page.waitForTimeout(args.waitMs);
 
-  if (args.mode === 'download') {
-    const candidate = pickBestCandidate(candidates.filter((item) => item.src), args.match, args.url, pageTitle);
+    const pageTitle = await page.title();
+    const candidates = await collectCandidates(page);
+
+    if (args.mode === 'extract') {
+      console.log(JSON.stringify({ requestedUrl: args.url, url: page.url(), title: pageTitle, candidates }, null, 2));
+      return;
+    }
+
+    if (args.mode === 'download') {
+      const candidate = pickBestCandidate(candidates.filter((item) => item.src), args.match, args.url, pageTitle);
     if (!candidate || !candidate.src) {
       throw new Error('no downloadable image candidate found after rendering');
     }
@@ -339,7 +354,6 @@ async function run() {
       contentType: result.contentType,
       output: args.out
     }, null, 2));
-    await browser.close();
     return;
   }
 
@@ -382,7 +396,9 @@ async function run() {
     output: args.out,
     selector: args.selector || null
   }, null, 2));
-  await browser.close();
+  } finally {
+    await browser.close();
+  }
 }
 
 run().catch((error) => {

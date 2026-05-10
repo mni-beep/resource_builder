@@ -477,6 +477,31 @@ C.richBullet(runs)
 C.teacherNotes(text)
 C.answerNotes(answers[])
 C.resolveImage(path)
+
+// Video / YouTube helpers
+C.videoSlide(title, videoSource, caption?, { notes?, autoPlay?, maxHeight? })
+C.downloadYouTube(url, outputDir?, { maxHeight?, timeout? })
+
+// Icon system & chrome
+C.initIcons()                  // async — pre-renders icon set
+C.icon("check"|"bulb"|"search"|"target"|"arrow"|...)  // get pre-rendered icon data URI
+C.softShadow(color?, blur?, offset?, opacity?)  // card shadow preset
+C.CHROME                       // chrome configuration: { cornerMark, lessonChip, footer }
+
+// Rich layout helpers (Claude-inspired)
+C.lessonTitleSlide(lessonNum, title, hook, hookSubtitle?, { notes?, timing?, accentColor? })
+C.roadmapSlide(eyebrow, title, cards[], { notes?, takeaway? })
+C.numberedIntentsSlide(title, intents[], { notes?, timing? })
+C.comparisonColumnsSlide(title, left, right, { notes?, bottomRule? })
+C.mcqCardSlide(n, stem, options[], { notes?, eyebrow? })
+C.processStepsSlide(title, steps[], { notes?, layout?, subtitle? })
+C.stepStripSlide(eyebrow, title, steps[], { notes?, calloutBox? })
+C.taskCardsSlide(eyebrow, title, tasks[], { notes?, bottomChecklist? })
+C.keyIdeaSlide(eyebrow, title, definition, left, right, { notes?, bottomTakeaway? })
+C.wrapUpSlide(eyebrow, title, takeaways[], nextTitle, nextText, { notes? })
+C.e5ContinuationSlide(skillLabel, phaseName, smText, title, bullets?, opts?)  // multi-slide phases
+C.successCriteriaPanel(title, items[], { intro? })  // render fragment
+C.calloutStrip(text, type?)     // render fragment
 ```
 
 ---
