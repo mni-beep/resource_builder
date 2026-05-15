@@ -255,6 +255,9 @@ function loadContentModules(contentDir) {
 const contentDir = config.contentDir || './content';
 const allContent = loadContentModules(contentDir);
 
+// Build numbering config from actually-used mcQuestion refs (avoids Word-rejecting bloat)
+C.finalizeNumbering();
+
 // ── Build section properties with optional enhancements ──
 const sectionProps = config.landscape ? { ...C.a4LandscapeProps } : { ...C.a4PageProps };
 

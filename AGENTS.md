@@ -7,14 +7,19 @@ A Node.js pipeline that generates `.docx` teaching resources (worksheets, bookle
 ## Your job as an agent
 
 When a user asks you to create a teaching resource, first ask whether they want:
-1. **A DOCX document** (worksheet, booklet, unit guide, assessment, lab manual, revision guide, in-class activities) — uses `build.js`
+1. **A DOCX document** (worksheet, booklet, unit guide, assessment, lab manual, revision guide, in-class activities, printed resources, problem set) — uses `build.js`
 2. **A PPTX slide deck** (standard lesson, E5 lesson, revision presentation, assessment walkthrough, lab intro) — uses `build-pptx.js`
 
 Then ask whether they want to:
 1. **Give custom instructions** — they tell you exactly what they want in their own words, and you build from that
-2. **Go through the questionnaire** — you walk through the structured interview below to gather requirements
+2. **Go through the questionnaire** — you walk through the structured interview below to gather requirements (or they can use `interview.html` — a browser form with both guided and custom modes)
 
-If they choose custom instructions, extract the details you need and skip to Phase 2. If they choose the questionnaire, proceed with Phase 1 below.
+If they choose custom instructions, extract the details you need and skip to Phase 2 below. You must still:
+- Update `resource.config.json` with the correct fields based on what they described
+- Create content modules in `content/<resource-name>/` with numeric prefixes
+- Use `C.*` and `H.*` helpers for all content
+- Run `node build.js` (DOCX) or `node build-pptx.js` (PPTX)
+- Fill in any gaps with sensible defaults — never loop back to the user for missing fields
 
 Never assume — always ask. Never write code before you have all the answers.
 
@@ -31,7 +36,7 @@ Ask the following questions. The questions you ask **branch based on Question 0 
 ### Question 0: OUTPUT FORMAT (determines which pipeline to use)
 
 What format should the resource be?
-- [ ] **DOCX (printable document)** — worksheets, booklets, unit guides, assessments, lab manuals, revision guides, in-class activities
+- [ ] **DOCX (printable document)** — worksheets, booklets, unit guides, assessments, lab manuals, revision guides, in-class activities, printed resources (card sets, templates, recording sheets, checklists), problem sets (topic-organised practice with worked examples + answer key)
 - [ ] **PPTX (slide deck)** — standard lessons, E5 lessons, revision presentations, assessment walkthroughs, lab introductions
 
 > **If DOCX:** Use `build.js`, reference `DOCX_BUILDER_REFERENCE.md`, content modules return arrays of docx elements.
@@ -45,7 +50,7 @@ What format should the resource be?
 
 | User chose | Open this file | Contains |
 |---|---|---|
-| **DOCX** | [`INTERVIEW_DOCX.md`](INTERVIEW_DOCX.md) | Q1 DOCX types, Q4 DOCX structure (worksheet/booklet/assessment/lab/revision/activities), Q5 question mix, Q6 scaffolding, DOCX Phase 2 notes |
+| **DOCX** | [`INTERVIEW_DOCX.md`](INTERVIEW_DOCX.md) | Q1 DOCX types, Q4 DOCX structure (worksheet/booklet/assessment/lab/revision/activities/printables/problem-set), Q5 question mix, Q6 scaffolding, DOCX Phase 2 notes |
 | **PPTX** | [`INTERVIEW_PPTX.md`](INTERVIEW_PPTX.md) | Q1 PPTX types, Q4 PPTX structure (standard/E5/revision/assessment/lab), E5 details & visual style, companion worksheet branching, PPTX Phase 2 notes |
 
 **After you've collected the answers from the format-specific file, return here for Questions 7–9 and Phase 2.**

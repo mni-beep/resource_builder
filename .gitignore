@@ -48,6 +48,7 @@ output/
 content/videos/
 content/
 .vscode/
+references/
 
 .playwright-mcp/
 resource.config.json

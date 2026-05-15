@@ -91,6 +91,33 @@
 </header>
 
 <!-- ============================================ -->
+<!-- MODE TOGGLE: Questionnaire vs Custom -->
+<!-- ============================================ -->
+<div class="section">
+  <h2>How would you like to build your resource?</h2>
+  <div class="options">
+    <div class="option"><input type="radio" name="mode" id="mode-guided" value="guided" checked onchange="updateVisibility()"><label for="mode-guided">📋 Guided questionnaire — answer structured questions</label></div>
+    <div class="option"><input type="radio" name="mode" id="mode-custom" value="custom" onchange="updateVisibility()"><label for="mode-custom">✏️ Custom instructions — describe what you want in your own words</label></div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- CUSTOM INSTRUCTIONS (shown when mode=custom) -->
+<!-- ============================================ -->
+<div class="section hidden" id="sec-custom">
+  <h2>Custom Instructions</h2>
+  <p class="desc">Describe the teaching resource you want in your own words. Include details like format (DOCX/PPTX), resource type, subject, year level, topics, structure, question types, and any special requirements. The AI agent will extract the details and build it.</p>
+  <div class="field"><textarea id="custom-text" rows="10" placeholder="e.g. I want a Year 9 Science DOCX worksheet on atomic structure with 4 MC questions, 3 short answer questions, and 1 extended response. Include a worked example for calculating protons/neutrons/electrons. Header text: 'Year 9 Science — Atomic Structure'. Author: Science Department. No images."></textarea></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="generateCustomPrompt()">📋 Generate Prompt</button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- GUIDED QUESTIONNAIRE (hidden when mode=custom) -->
+<!-- ============================================ -->
+<div id="sec-guided">
+<!-- ============================================ -->
 <!-- Q0: OUTPUT FORMAT -->
 <!-- ============================================ -->
 <div class="section" id="sec-q0">
@@ -117,6 +144,8 @@
     <div class="option"><input type="radio" name="q1d" id="q1d-lab" value="lab" onchange="updateVisibility()"><label for="q1d-lab">Lab / practical manual</label></div>
     <div class="option"><input type="radio" name="q1d" id="q1d-revision" value="revision" onchange="updateVisibility()"><label for="q1d-revision">Revision / study guide</label></div>
     <div class="option"><input type="radio" name="q1d" id="q1d-activities" value="activities" onchange="updateVisibility()"><label for="q1d-activities">In-class activities</label></div>
+    <div class="option"><input type="radio" name="q1d" id="q1d-printables" value="printables" onchange="updateVisibility()"><label for="q1d-printables">Printed resources (cards, templates, recording sheets, checklists)</label></div>
+    <div class="option"><input type="radio" name="q1d" id="q1d-problemset" value="problemset" onchange="updateVisibility()"><label for="q1d-problemset">Problem set (topic-organised practice, worked examples, answer key)</label></div>
   </div>
 </div>
 
@@ -259,6 +288,36 @@
     <label><input type="checkbox" id="q4ac-cover"> Include cover page</label>
   </div>
   <div class="field" style="margin-top:12px"><label>Any specific activity types or themes?</label><textarea id="q4ac-types" rows="2" placeholder="e.g. Card sorts, station rotations, circuit builders, group challenges…&#10;Leave blank and the agent will vary them."></textarea></div>
+</div>
+
+<!-- Q4: DOCX Problem Set -->
+<div class="section hidden" id="sec-q4-problemset">
+  <h2><span class="num">4</span> Structure — Problem Set</h2>
+  <div class="field-row">
+    <div class="field"><label>How many problem sections/sets?</label><input type="number" id="q4ps-sections" min="1" value="5"></div>
+    <div class="field"><label>Questions per section (total)</label><input type="number" id="q4ps-qpersec" min="1" value="10"></div>
+  </div>
+  <div class="options" style="margin-top:12px">
+    <div class="option"><input type="radio" name="q4ps-difficulty" id="q4ps-diff-easyhard" value="easy-hard" checked><label for="q4ps-diff-easyhard">Easy → Hard within each section</label></div>
+    <div class="option"><input type="radio" name="q4ps-difficulty" id="q4ps-diff-secinc" value="section-increasing"><label for="q4ps-diff-secinc">Section-by-section increasing</label></div>
+    <div class="option"><input type="radio" name="q4ps-difficulty" id="q4ps-diff-mixed" value="mixed"><label for="q4ps-diff-mixed">Mixed difficulty throughout</label></div>
+  </div>
+  <div class="checklist" style="margin-top:12px">
+    <label><input type="checkbox" id="q4ps-worked" checked> Include worked examples</label>
+    <label><input type="checkbox" id="q4ps-nowtry" checked> Include "Now you try" mirrored problems</label>
+    <label><input type="checkbox" id="q4ps-reference"> Include reference / formula sheet</label>
+    <label><input type="checkbox" id="q4ps-cover"> Include cover page</label>
+    <label><input type="checkbox" id="q4ps-diagrams" checked> Include diagram-based problems</label>
+  </div>
+  <div class="field-row" style="margin-top:12px">
+    <div class="field"><label>Worked examples per section</label><input type="number" id="q4ps-weper" min="0" value="2"></div>
+    <div class="field"><label>Answer key</label><select id="q4ps-answerkey"><option value="integrated">Integrated — at end of document</option><option value="separate">Separate answer key document</option><option value="none">No answers</option></select></div>
+  </div>
+  <div class="options" style="margin-top:12px">
+    <div class="option"><input type="radio" name="q4ps-space" id="q4ps-space-min" value="minimal"><label for="q4ps-space-min">Minimal working space (compact)</label></div>
+    <div class="option"><input type="radio" name="q4ps-space" id="q4ps-space-std" value="standard" checked><label for="q4ps-space-std">Standard — 3–5 lines per short answer</label></div>
+    <div class="option"><input type="radio" name="q4ps-space" id="q4ps-space-gen" value="generous"><label for="q4ps-space-gen">Generous — full working lines</label></div>
+  </div>
 </div>
 
 <!-- Q4: PPTX E5 -->
@@ -497,6 +556,7 @@
   <button class="btn btn-secondary" onclick="resetForm()">🔄 Reset</button>
   <span style="margin-left:16px; color:#808080; font-size:13px; font-style:italic">Blank fields = agent chooses the best default for your context</span>
 </div>
+</div><!-- /sec-guided -->
 
 <!-- ============================================ -->
 <!-- OUTPUT -->
@@ -512,6 +572,7 @@
 // ============================================================
 // VISIBILITY LOGIC
 // ============================================================
+function getMode() { return document.querySelector('input[name="mode"]:checked')?.value; }
 function getQ0() { return document.querySelector('input[name="q0"]:checked')?.value; }
 function getQ1d() { return document.querySelector('input[name="q1d"]:checked')?.value; }
 function getQ1p() { return document.querySelector('input[name="q1p"]:checked')?.value; }
@@ -522,6 +583,16 @@ function showIf(id, cond) { cond ? show(id) : hide(id); }
 function qval(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value; }
 
 function updateVisibility() {
+  const mode = getMode();
+  const isCustom = mode === 'custom';
+
+  // Mode toggle
+  showIf('sec-guided', !isCustom);
+  showIf('sec-custom', isCustom);
+
+  // Hide rest of questionnaire logic in custom mode
+  if (isCustom) return;
+
   const q0 = getQ0();
   const isDocx = q0 === 'docx';
   const isPptx = q0 === 'pptx';
@@ -548,6 +619,7 @@ function updateVisibility() {
   const isLab = q1d === 'lab';
   const isRevision = q1d === 'revision';
   const isActivities = q1d === 'activities';
+  const isProblemSet = q1d === 'problemset';
   const isDocxWS = q1d === 'worksheet';  // worksheet only — revision has its own Q4
   const isE5 = q1p === 'e5';
   const isStandardPptx = q1p === 'standard';
@@ -563,6 +635,7 @@ function updateVisibility() {
   showIf('sec-q4-lab', isDocx && isLab);
   showIf('sec-q4-revision-docx', isDocx && isRevision);
   showIf('sec-q4-activities', isDocx && isActivities);
+  showIf('sec-q4-problemset', isDocx && isProblemSet);
 
   // Q4: PPTX branches
   showIf('sec-q4-e5', isPptx && isE5);
@@ -657,7 +730,31 @@ document.getElementById('q4b-weeks')?.addEventListener('input', updateVisibility
 document.getElementById('q4b-lpw')?.addEventListener('input', updateVisibility);
 
 // ============================================================
-// PROMPT GENERATION
+// CUSTOM INSTRUCTIONS PROMPT
+// ============================================================
+function generateCustomPrompt() {
+  const text = document.getElementById('custom-text').value.trim();
+  if (!text) { alert('Please enter your custom instructions describing the resource you want.'); return; }
+
+  const lines = [];
+  lines.push('I want to create a teaching resource. Please follow the AGENTS.md workflow.');
+  lines.push('');
+  lines.push('I\'m giving custom instructions rather than going through the questionnaire.');
+  lines.push('Here\'s what I want:');
+  lines.push('');
+  lines.push(text);
+  lines.push('');
+  lines.push('Extract the details you need (format, resource type, subject, year level, topics, structure, question types, etc.) and build the resource. Fill in any gaps with sensible defaults for the context. Let me know if you need any clarification.');
+
+  const output = lines.join('\n');
+  document.getElementById('output').textContent = output;
+  document.getElementById('output').classList.add('visible');
+  document.getElementById('copy-row').style.display = 'flex';
+  document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ============================================================
+// PROMPT GENERATION (Guided Questionnaire)
 // ============================================================
 function v(id, fallback) {
   const el = document.getElementById(id);
@@ -697,7 +794,7 @@ function generatePrompt() {
   // Q1
   const typeMap = {
     worksheet:'Single worksheet', booklet:'Multi-lesson booklet', 'booklet-te':'Multi-lesson booklet + teacher edition',
-    unitguide:'Week-by-week unit guide', assessment:'Assessment / exam', lab:'Lab / practical manual', revision:'Revision / study guide', activities:'In-class activities',
+    unitguide:'Week-by-week unit guide', assessment:'Assessment / exam', lab:'Lab / practical manual', revision:'Revision / study guide', activities:'In-class activities', printables:'Printed resources (cards, templates, sheets)', problemset:'Problem set (topic-organised practice, worked examples, answer key)',
     standard:'Standard lesson deck', e5:'E5 lesson deck', short:'Short presentation',
     'revision-pptx':'Revision deck', 'assessment-pptx':'Assessment walkthrough', 'lab-pptx':'Lab/practical intro'
   };
@@ -776,6 +873,13 @@ function generatePrompt() {
   if (isDocx && q1d === 'activities') {
     q4details.push(`  Activities: ${v('q4ac-count')}, Materials list: ${v('q4ac-materials')}, Reflections: ${v('q4ac-reflection')}, Teacher instructions: ${v('q4ac-teacher')}, Cover page: ${v('q4ac-cover')}`);
     if (v('q4ac-types')) q4details.push(`  Activity types/themes: ${v('q4ac-types')}`);
+  }
+  if (isDocx && q1d === 'problemset') {
+    q4details.push(`  Sections: ${v('q4ps-sections','5')}, Questions per section: ${v('q4ps-qpersec','10')}`);
+    q4details.push(`  Difficulty: ${qval('q4ps-difficulty')}`);
+    q4details.push(`  Worked examples: ${v('q4ps-worked')} (${v('q4ps-weper','2')} per section), Now-you-try: ${v('q4ps-nowtry')}`);
+    q4details.push(`  Answer key: ${v('q4ps-answerkey')}, Reference sheet: ${v('q4ps-reference')}, Cover: ${v('q4ps-cover')}, Diagrams: ${v('q4ps-diagrams')}`);
+    q4details.push(`  Working space: ${qval('q4ps-space')}`);
   }
   if (isPptx && q1p === 'revision-pptx') {
     q4details.push(`  Topics: ${v('q4r-topics')}, Dividers: ${v('q4r-dividers')}, Questions: ${v('q4r-questions')}, Per topic: ${v('q4r-per')}`);

@@ -16,7 +16,7 @@ const {
   VerticalAlignTable,
   CheckBox,
   Column,
-  Math, MathRun, MathFraction, MathRadical, MathNumerator, MathDenominator,
+  Math: DocxMath, MathRun, MathFraction, MathRadical, MathNumerator, MathDenominator,
   MathSubScript, MathSuperScript,
   Comment, CommentRangeStart, CommentRangeEnd, CommentReference,
   Footnote, FootnoteReferenceRun,
@@ -67,25 +67,24 @@ const _mcLevel = {
   style: { paragraph: { indent: { left: 720, hanging: 360 } } }
 };
 
-// Generate mc-default + mc-{prefix}{number} for all single-letter prefixes
-// and common multi-letter prefixes. Any agent can use mc-X{n} without
-// pre-declaration as long as the prefix is listed here.
-// Single-letter: mc-a1..mc-z50  → covers mc-l1, mc-s1, mc-q1, mc-p1 etc.
-// Multi-letter:  mc-ws1..mc-ws50, mc-def1..mc-def50  → backward compat
-const PREFIXES = [
-  ...'abcdefghijklmnopqrstuvwxyz'.split(''),  // single-letter a-z
-  'ws', 'def'   // common multi-letter prefixes (worksheet, default)
-];
-const _mcConfigs = [
-  { reference: "mc-default", levels: [_mcLevel] }
-];
-for (const prefix of PREFIXES) {
-  for (let i = 1; i <= 50; i++) {
-    _mcConfigs.push({ reference: `mc-${prefix}${i}`, levels: [_mcLevel] });
-  }
+// Dynamic numbering registry — mcQuestion registers refs as they're used.
+// After all content modules load, build.js calls finalizeNumbering() to build the
+// numbering config from only the refs that were actually referenced.
+const _usedMcRefs = new Set();
+
+function registerMcRef(ref) {
+  _usedMcRefs.add(ref);
 }
 
-const numberingConfig = { config: _mcConfigs };
+function finalizeNumbering() {
+  const configs = [];
+  for (const ref of _usedMcRefs) {
+    configs.push({ reference: ref, levels: [_mcLevel] });
+  }
+  numberingConfig.config = configs;
+}
+
+const numberingConfig = { config: [] };
 
 // ---- HEADER / FOOTER ----
 function studentHeader(text) {
@@ -432,6 +431,7 @@ function workedExample(title, children) {
 // ---- MULTIPLE CHOICE QUESTION ----
 function mcQuestion(n, stem, options, ref) {
   const reference = ref || "mc-default";
+  registerMcRef(reference);
   return [
     new Paragraph({
       spacing: { before: 160, after: 80 },
@@ -536,7 +536,7 @@ function dotLeaderTab(position) {
 
 // ---- MATH / EQUATIONS ----
 function mathFraction(numerator, denominator) {
-  return new Math({
+  return new DocxMath({
     children: [
       new MathFraction({
         numerator: new MathNumerator({ children: [new MathRun(numerator)] }),
@@ -547,7 +547,7 @@ function mathFraction(numerator, denominator) {
 }
 
 function mathRadical(degree, expression) {
-  return new Math({
+  return new DocxMath({
     children: [
       new MathRadical({
         children: [new MathRun(expression)],
@@ -558,7 +558,7 @@ function mathRadical(degree, expression) {
 }
 
 function mathSubscript(base, sub) {
-  return new Math({
+  return new DocxMath({
     children: [
       new MathRun(base),
       new MathSubScript({ children: [new MathRun(sub)] })
@@ -567,7 +567,7 @@ function mathSubscript(base, sub) {
 }
 
 function mathSuperscript(base, sup) {
-  return new Math({
+  return new DocxMath({
     children: [
       new MathRun(base),
       new MathSuperScript({ children: [new MathRun(sup)] })
@@ -644,6 +644,7 @@ module.exports = {
   linedAnswerSpace, drawingSpace,
   sectionTag, lessonBanner,
   workedExample, mcQuestion,
+  registerMcRef, finalizeNumbering,
   // ── New helpers ──
   toc, image, imageFromFile,
   checkbox,

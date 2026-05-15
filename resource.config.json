@@ -1,9 +1,9 @@
 {
-  "title": "Year 9 Science · Module 2: Diseases — Unit Guide",
+  "title": "Year 9 Science · Atomic Theory — Printed Resources",
   "creator": "Science Department",
-  "outputFile": "./output/diseases-unit-guide.docx",
-  "header": "Year 9 Science · Module 2: Diseases — Unit Guide",
-  "contentDir": "./content/diseases-unit-guide",
+  "outputFile": "./output/atomic-theory-printables.docx",
+  "header": "Year 9 Science · Atomic Theory — Printed Resources",
+  "contentDir": "./content/atomic-theory-printables",
   "footer": true,
-  "landscape": true
+  "landscape": false
 }

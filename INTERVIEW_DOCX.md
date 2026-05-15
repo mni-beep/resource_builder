@@ -17,6 +17,7 @@
 - [ ] **Lab / practical manual** (procedures + report templates)
 - [ ] **Revision / study guide** (dense theory, reference tables, no questions)
 - [ ] **In-class activities** (printable activity sheets — card sorts, station rotations, group challenges, etc.)
+- [ ] **Problem set** (topic-organised practice problems with worked examples, mirrored "now you try" pairs, and integrated answer key)
 - [ ] **Other** (describe): ___________
 
 ---
@@ -74,11 +75,23 @@
 - Should it have a cover page? [ ] Yes  [ ] No
 - Any specific activity types or themes? ___________ (card sorts, station rotations, group challenges, circuit builders, data collection, design tasks, discussion prompts — leave blank for variety)
 
+**For problem sets:**
+- How many problem sections/sets? ___________ (default 5 — one per topic)
+- How many questions per section total? ___________ (default 8–12)
+- Difficulty progression: [ ] Easy → Hard within each section  [ ] Section-by-section increasing  [ ] Mixed difficulty throughout
+- Include worked examples? [ ] Yes (___ per section, default 2)  [ ] No
+- Include "Now you try" mirrored problems after each worked example? [ ] Yes  [ ] No
+- Answer key: [ ] Integrated — answers at end of document  [ ] Separate answer key document  [ ] No answers (student self-check only)
+- Include reference / formula sheet? [ ] Yes (1 page, front or back)  [ ] No
+- Cover page? [ ] Yes (title + topic list)  [ ] No
+- Student working space: [ ] Minimal — compact layout  [ ] Standard — 3–5 lines per short answer  [ ] Generous — full working lines
+- Include diagram-based problems? [ ] Yes  [ ] No
+
 ---
 
 ## Question 5: WORKSHEETS & QUESTION MIX
 
-> **This section is for DOCX resources (worksheets, booklets, assessments).**  
+> **This section is for DOCX resources (worksheets, booklets, assessments, problem sets).**  
 > **Skip for:** assessments, unit guides, lab manuals, revision guides, and in-class activities — these resource types have their own question/activity structures defined in Question 4. Q5 only appears for worksheets and booklets.
 
 For each section/lesson, what question types?
