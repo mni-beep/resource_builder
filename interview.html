@@ -190,6 +190,11 @@
 <!-- Q4: DOCX Unit Guide -->
 <div class="section hidden" id="sec-q4-unitguide">
   <h2><span class="num">4</span> Structure — Unit Guide</h2>
+  <div class="field-row">
+    <div class="field"><label>How many weeks?</label><input type="number" id="q4u-weeks" min="1" value="6"></div>
+    <div class="field"><label>Lessons per week?</label><input type="number" id="q4u-lpw" min="1" value="3"></div>
+  </div>
+  <p style="margin:8px 0;color:var(--muted)">Total: <strong id="q4u-total">18</strong> lessons</p>
   <div class="field"><label>What columns should the table have?</label><textarea id="q4u-columns" rows="2">Week | Topic | Content | Activities | Resources &amp; Experiments | Assessment &amp; Homework | Inclusion</textarea></div>
   <div class="options" style="margin-top:12px">
     <div class="option"><input type="radio" name="q4u" id="q4u-landscape" value="landscape" checked><label for="q4u-landscape">Landscape (recommended for 6+ columns)</label></div>
@@ -204,6 +209,14 @@
     <div class="field"><label>How many sections?</label><input type="number" id="q4a-sections" min="1" value="2"></div>
     <div class="field"><label>Time limit (if stated)</label><input type="text" id="q4a-time" placeholder="e.g. 60 minutes"></div>
   </div>
+  <div class="field-row" style="margin-top:12px">
+    <div class="field"><label>Total marks</label><input type="text" id="q4a-marks" placeholder="e.g. 50"></div>
+    <div class="field"><label>MC per section</label><input type="number" id="q4a-mc" min="0" value="6"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>Short answer per section</label><input type="number" id="q4a-sa" min="0" value="4"></div>
+    <div class="field"><label>Extended response per section</label><input type="number" id="q4a-er" min="0" value="2"></div>
+  </div>
   <div class="checklist"><label><input type="checkbox" id="q4a-markingkey"> Separate marking key document</label></div>
 </div>
 
@@ -216,6 +229,22 @@
     <label><input type="checkbox" id="q4l-report" checked> Each has report template</label>
   </div>
   <div class="field"><label>Safety notes to include</label><textarea id="q4l-safety" placeholder="e.g. Wear safety goggles, do not touch hot surfaces…"></textarea></div>
+</div>
+
+<!-- Q4: DOCX Revision / Study Guide -->
+<div class="section hidden" id="sec-q4-revision-docx">
+  <h2><span class="num">4</span> Structure — Revision / Study Guide</h2>
+  <div class="field"><label>How many topics to cover?</label><input type="number" id="q4rd-topics" min="1" value="6"></div>
+  <div class="options" style="margin-top:12px">
+    <div class="option"><input type="radio" name="q4rd-density" id="q4rd-dense" value="dense" checked><label for="q4rd-dense"><strong>Dense summary</strong> — key facts, compact reference tables, no questions</label></div>
+    <div class="option"><input type="radio" name="q4rd-density" id="q4rd-detailed" value="detailed"><label for="q4rd-detailed"><strong>Detailed reference</strong> — full explanations, diagrams, worked examples, practice questions</label></div>
+  </div>
+  <div class="checklist" style="margin-top:12px">
+    <label><input type="checkbox" id="q4rd-glossary" checked> Include glossary</label>
+    <label><input type="checkbox" id="q4rd-formulas" checked> Include formula / cheat sheet</label>
+    <label><input type="checkbox" id="q4rd-questions"> Include practice questions</label>
+  </div>
+  <div class="field" id="fld-q4rd-qpt" style="margin-top:8px"><label>Questions per topic (if included)</label><input type="number" id="q4rd-qpt" min="0" value="3"></div>
 </div>
 
 <!-- Q4: PPTX E5 -->
@@ -503,7 +532,8 @@ function updateVisibility() {
   const isUnitGuide = q1d === 'unitguide';
   const isAssessment = q1d === 'assessment';
   const isLab = q1d === 'lab';
-  const isDocxWS = q1d === 'worksheet' || q1d === 'revision';
+  const isRevision = q1d === 'revision';
+  const isDocxWS = q1d === 'worksheet';  // worksheet only — revision has its own Q4
   const isE5 = q1p === 'e5';
   const isStandardPptx = q1p === 'standard';
   const isRevisionPptx = q1p === 'revision-pptx';
@@ -516,6 +546,7 @@ function updateVisibility() {
   showIf('sec-q4-unitguide', isDocx && isUnitGuide);
   showIf('sec-q4-assessment', isDocx && isAssessment);
   showIf('sec-q4-lab', isDocx && isLab);
+  showIf('sec-q4-revision-docx', isDocx && isRevision);
 
   // Q4: PPTX branches
   showIf('sec-q4-e5', isPptx && isE5);
@@ -551,9 +582,10 @@ function updateVisibility() {
   const stdWsYes = isPptx && isStandardPptx && qval('q4s-ws') === 'yes';
   showIf('sec-q4-sworksheet-details', stdWsYes);
 
-  // Q5: only for DOCX (all types), or PPTX with companion worksheet (E5 or standard)
+  // Q5: DOCX question-based resources only (NOT unit guide, assessment, lab, revision); or PPTX with companion worksheet
   const hasCompanionWs = e5wsYes || stdWsYes;
-  showIf('sec-q5', started && (isDocx || hasCompanionWs));
+  const isDocxPlanningDoc = isUnitGuide || isAssessment || isLab || isRevision;
+  showIf('sec-q5', started && ((isDocx && !isDocxPlanningDoc) || hasCompanionWs));
   // Update Q5 heading + description based on context
   const q5Title = document.querySelector('#sec-q5 h2');
   const q5Desc = document.querySelector('#sec-q5 .desc');
@@ -594,6 +626,12 @@ function updateVisibility() {
   const lpw = parseInt(document.getElementById('q4b-lpw')?.value) || 0;
   const totalEl = document.getElementById('q4b-total');
   if (totalEl) totalEl.textContent = weeks * lpw;
+
+  // Update unit guide total
+  const uWeeks = parseInt(document.getElementById('q4u-weeks')?.value) || 0;
+  const uLpw = parseInt(document.getElementById('q4u-lpw')?.value) || 0;
+  const uTotalEl = document.getElementById('q4u-total');
+  if (uTotalEl) uTotalEl.textContent = uWeeks * uLpw;
 }
 
 // Attach listeners
@@ -668,11 +706,13 @@ function generatePrompt() {
     }
   }
   if (isDocx && q1d === 'unitguide') {
+    q4details.push(`  Weeks: ${v('q4u-weeks')}, Lessons/week: ${v('q4u-lpw')}`);
     q4details.push(`  Columns: ${v('q4u-columns')}`);
     q4details.push(`  Orientation: ${qval('q4u')}`);
   }
   if (isDocx && q1d === 'assessment') {
-    q4details.push(`  Sections: ${v('q4a-sections')}, Time: ${v('q4a-time')}, Marking key: ${v('q4a-markingkey')}`);
+    q4details.push(`  Sections: ${v('q4a-sections')}, Time: ${v('q4a-time')}, Total marks: ${v('q4a-marks')}, Marking key: ${v('q4a-markingkey')}`);
+    q4details.push(`  Question mix per section: MC ${v('q4a-mc','6')}, Short answer ${v('q4a-sa','4')}, Extended response ${v('q4a-er','2')}`);
   }
   if (isDocx && q1d === 'lab') {
     q4details.push(`  Labs: ${v('q4l-count')}, Procedure: ${v('q4l-procedure')}, Report: ${v('q4l-report')}`);
@@ -712,6 +752,10 @@ function generatePrompt() {
     } else {
       q4details.push('  Companion worksheet: No — no slide activities (theory/examples only, no student tasks)');
     }
+  }
+  if (isDocx && q1d === 'revision') {
+    q4details.push(`  Topics: ${v('q4rd-topics')}, Density: ${qval('q4rd-density')}, Glossary: ${v('q4rd-glossary')}, Formulas: ${v('q4rd-formulas')}, Practice questions: ${v('q4rd-questions')}`);
+    if (v('q4rd-questions') === 'Yes') q4details.push(`  Questions per topic: ${v('q4rd-qpt','3')}`);
   }
   if (isPptx && q1p === 'revision-pptx') {
     q4details.push(`  Topics: ${v('q4r-topics')}, Dividers: ${v('q4r-dividers')}, Questions: ${v('q4r-questions')}, Per topic: ${v('q4r-per')}`);

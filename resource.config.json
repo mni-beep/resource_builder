@@ -1,8 +1,9 @@
 {
-  "type": "pptx",
-  "title": "Circuit Components — Year 9 Science",
+  "title": "Year 9 Science · Module 1: Atomic Structure — Unit Guide",
   "creator": "Science Department",
-  "outputFile": "./output/circuit-components-e5-deck.pptx",
-  "contentDir": "./content/circuit-components-e5",
+  "outputFile": "./output/atomic-structure-unit-guide.docx",
+  "header": "Year 9 Science · Atomic Structure — Unit Guide",
+  "contentDir": "./content/atomic-structure-unit-guide",
+  "footer": true,
   "landscape": true
 }

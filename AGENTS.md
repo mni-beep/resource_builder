@@ -107,6 +107,8 @@ What format should the resource be?
 
 **For assessments / exams:**
 - How many sections? ___________
+- Total marks: ___________
+- Question mix per section: MC ___ Short answer ___ Extended response ___
 - Should there be a separate marking key document? [ ] Yes  [ ] No
 - Time limit (if stated on cover): ___________
 
@@ -217,12 +219,17 @@ Ask the user which visual style they prefer for the deck:
 **For revision / study guides:**
 - How many topics to cover? ___________
 - Dense summary or detailed reference? [ ] Summary  [ ] Detailed
+- Should it include a glossary? [ ] Yes  [ ] No
+- Should it include a formula / cheat sheet? [ ] Yes  [ ] No
+- Should it include practice questions? [ ] Yes  [ ] No
+- If yes, how many questions per topic? ___________
 
 ---
 
 ### Question 5: WORKSHEETS & QUESTION MIX
 
 > **This section is for DOCX resources AND for companion DOCX worksheets (E5 Elaborate or standard PPTX lesson).**
+> **Skip for:** assessments, unit guides, lab manuals, and revision guides — these resource types have their own question/activity structures defined in Question 4. Q5 only appears for worksheets, booklets, and PPTX companion worksheets.
 > **Skip the detailed question-types checklist for PPTX slide-deck questions** — in PPTX, questions are individual slides (MC → `C.mcQuestionSlide()`, short answer → `C.shortAnswerSlide()`, extended response → `C.extendedResponseSlide()`), and the number of each was covered in Question 4. This section is for companion DOCX worksheets only.
 
 **For DOCX resources (worksheets, booklets, assessments):**
