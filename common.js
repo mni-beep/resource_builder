@@ -539,8 +539,8 @@ function mathFraction(numerator, denominator) {
   return new DocxMath({
     children: [
       new MathFraction({
-        numerator: new MathNumerator({ children: [new MathRun(numerator)] }),
-        denominator: new MathDenominator({ children: [new MathRun(denominator)] })
+        numerator: [new MathRun(numerator)],
+        denominator: [new MathRun(denominator)]
       })
     ]
   });
@@ -561,7 +561,7 @@ function mathSubscript(base, sub) {
   return new DocxMath({
     children: [
       new MathRun(base),
-      new MathSubScript({ children: [new MathRun(sub)] })
+      new MathSubScript([new MathRun(sub)])
     ]
   });
 }
@@ -570,8 +570,48 @@ function mathSuperscript(base, sup) {
   return new DocxMath({
     children: [
       new MathRun(base),
-      new MathSuperScript({ children: [new MathRun(sup)] })
+      new MathSuperScript([new MathRun(sup)])
     ]
+  });
+}
+
+// ---- ADVANCED FORMULA BUILDER ----
+// Simple builder for Word math equations.
+// Part types:
+//   { type: 'frac', num: 'string', den: 'string' } — creates fraction
+//   { type: 'sqrt', value: 'string', degree?: n }  — creates square root
+//   Anything else is treated as raw text (use for +, =, etc.)
+function mathFormula(parts) {
+  const children = (parts || []).map(p => {
+    if (p.type === 'frac') {
+      return new MathFraction({
+        numerator: [new MathRun(p.num)],
+        denominator: [new MathRun(p.den)]
+      });
+    }
+    if (p.type === 'sqrt') {
+      const degree = p.degree ? [new MathRun(String(p.degree))] : undefined;
+      return new MathRadical({ children: [new MathRun(p.value)], degree });
+    }
+    return new MathRun(String(p));
+  });
+  return new DocxMath({ children });
+}
+
+// Create a Paragraph containing mixed text and math formulas.
+// elements: array of strings (plain text) or DocxMath objects (formulas).
+// Pass opts.fontSize (default 22) and opts.spacing for customisation.
+function mathPara(elements, opts = {}) {
+  const fontSize = opts.fontSize || 22;
+  const children = elements.map(el => {
+    if (typeof el === 'string') {
+      return new TextRun({ text: el, size: fontSize });
+    }
+    return el; // DocxMath object
+  });
+  return new Paragraph({
+    spacing: opts.spacing || { after: 80 },
+    children
   });
 }
 
@@ -651,6 +691,7 @@ module.exports = {
   bookmark, pageRef, internalLink, link,
   tabStop, dotLeaderTab,
   mathFraction, mathRadical, mathSubscript, mathSuperscript,
+  mathFormula, mathPara,
   comment, footnoteRef, footnote,
   columns, pageBorder,
 };

@@ -50,9 +50,12 @@
 **For assessments / exams:**
 - How many sections? ___________
 - Total marks: ___________
-- Question mix per section: MC ___ Short answer ___ Extended response ___
-- Should there be a separate marking key document? [ ] Yes  [ ] No
 - Time limit (if stated on cover): ___________
+- Question mix per section (can differ between sections):
+  - Section 1: MC ___ Short answer ___ Extended response ___
+  - Section 2: MC ___ Short answer ___ Extended response ___
+  - (etc. for each section)
+- Should there be a separate marking key document? [ ] Yes  [ ] No
 
 **For lab / practical manuals:**
 - How many labs/practicals? ___________

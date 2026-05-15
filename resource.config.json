@@ -1,9 +1,9 @@
 {
-  "title": "Year 9 Science · Atomic Theory — Printed Resources",
+  "title": "Year 10 Electronics: Arduino — Loops & Arrays",
   "creator": "Science Department",
-  "outputFile": "./output/atomic-theory-printables.docx",
-  "header": "Year 9 Science · Atomic Theory — Printed Resources",
-  "contentDir": "./content/atomic-theory-printables",
+  "outputFile": "./output/arduino-loops-arrays-workbook.docx",
+  "header": "Year 10 Electronics · Arduino: Loops & Arrays",
+  "contentDir": "./content/arduino-loops-arrays",
   "footer": true,
   "landscape": false
 }

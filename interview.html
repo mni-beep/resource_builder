@@ -236,18 +236,15 @@
 <div class="section hidden" id="sec-q4-assessment">
   <h2><span class="num">4</span> Structure — Assessment</h2>
   <div class="field-row">
-    <div class="field"><label>How many sections?</label><input type="number" id="q4a-sections" min="1" value="2"></div>
+    <div class="field"><label>How many sections?</label><input type="number" id="q4a-sections" min="1" max="6" value="2"></div>
     <div class="field"><label>Time limit (if stated)</label><input type="text" id="q4a-time" placeholder="e.g. 60 minutes"></div>
   </div>
   <div class="field-row" style="margin-top:12px">
     <div class="field"><label>Total marks</label><input type="text" id="q4a-marks" placeholder="e.g. 50"></div>
-    <div class="field"><label>MC per section</label><input type="number" id="q4a-mc" min="0" value="6"></div>
   </div>
-  <div class="field-row">
-    <div class="field"><label>Short answer per section</label><input type="number" id="q4a-sa" min="0" value="4"></div>
-    <div class="field"><label>Extended response per section</label><input type="number" id="q4a-er" min="0" value="2"></div>
-  </div>
-  <div class="checklist"><label><input type="checkbox" id="q4a-markingkey"> Separate marking key document</label></div>
+  <!-- Per-section question type fields — populated dynamically -->
+  <div id="q4a-per-section-container"></div>
+  <div class="checklist" style="margin-top:12px"><label><input type="checkbox" id="q4a-markingkey"> Separate marking key document</label></div>
 </div>
 
 <!-- Q4: DOCX Lab -->
@@ -721,6 +718,44 @@ function updateVisibility() {
   const uLpw = parseInt(document.getElementById('q4u-lpw')?.value) || 0;
   const uTotalEl = document.getElementById('q4u-total');
   if (uTotalEl) uTotalEl.textContent = uWeeks * uLpw;
+
+  // Rebuild per-section fields for assessment
+  rebuildSectionFields();
+}
+
+// ============================================================
+// DYNAMIC PER-SECTION QUESTION TYPE FIELDS (Assessment Q4)
+// ============================================================
+function rebuildSectionFields() {
+  const container = document.getElementById('q4a-per-section-container');
+  if (!container) return;
+
+  const sectionsEl = document.getElementById('q4a-sections');
+  const count = Math.max(1, Math.min(6, parseInt(sectionsEl?.value) || 2));
+
+  // Preserve existing values before rebuild
+  const saved = {};
+  for (let s = 1; s <= 6; s++) {
+    saved['mc' + s] = document.getElementById('q4a-s' + s + '-mc')?.value || '6';
+    saved['sa' + s] = document.getElementById('q4a-s' + s + '-sa')?.value || '4';
+    saved['er' + s] = document.getElementById('q4a-s' + s + '-er')?.value || '2';
+  }
+
+  let html = '';
+  for (let s = 1; s <= count; s++) {
+    const mcVal = saved['mc' + s];
+    const saVal = saved['sa' + s];
+    const erVal = saved['er' + s];
+    html += '<div class="sub-section" style="margin-top:10px">';
+    html += '<h3>Section ' + s + ' — Question Mix</h3>';
+    html += '<div class="field-row">';
+    html += '<div class="field"><label>MC</label><input type="number" id="q4a-s' + s + '-mc" min="0" value="' + mcVal + '" style="width:70px"></div>';
+    html += '<div class="field"><label>Short answer</label><input type="number" id="q4a-s' + s + '-sa" min="0" value="' + saVal + '" style="width:70px"></div>';
+    html += '<div class="field"><label>Extended response</label><input type="number" id="q4a-s' + s + '-er" min="0" value="' + erVal + '" style="width:70px"></div>';
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
 }
 
 // Attach listeners
@@ -824,8 +859,15 @@ function generatePrompt() {
     q4details.push(`  Orientation: ${qval('q4u')}`);
   }
   if (isDocx && q1d === 'assessment') {
-    q4details.push(`  Sections: ${v('q4a-sections')}, Time: ${v('q4a-time')}, Total marks: ${v('q4a-marks')}, Marking key: ${v('q4a-markingkey')}`);
-    q4details.push(`  Question mix per section: MC ${v('q4a-mc','6')}, Short answer ${v('q4a-sa','4')}, Extended response ${v('q4a-er','2')}`);
+    const numSections = parseInt(v('q4a-sections', '2')) || 1;
+    q4details.push(`  Sections: ${numSections}, Time: ${v('q4a-time')}, Total marks: ${v('q4a-marks')}, Marking key: ${v('q4a-markingkey')}`);
+    q4details.push('  Question mix per section:');
+    for (let s = 1; s <= numSections; s++) {
+      const mc = document.getElementById('q4a-s' + s + '-mc')?.value || '6';
+      const sa = document.getElementById('q4a-s' + s + '-sa')?.value || '4';
+      const er = document.getElementById('q4a-s' + s + '-er')?.value || '2';
+      q4details.push(`    Section ${s}: MC ${mc}, Short answer ${sa}, Extended response ${er}`);
+    }
   }
   if (isDocx && q1d === 'lab') {
     q4details.push(`  Labs: ${v('q4l-count')}, Procedure: ${v('q4l-procedure')}, Report: ${v('q4l-report')}`);

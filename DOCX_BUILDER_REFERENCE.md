@@ -567,6 +567,10 @@ The same `build.js` handles all resource types — you only change `resource.con
 
 **Assessment with separate marking key**: Build twice — update `outputFile` in config between runs, or create two config files and run `build.js` against each.
 
+**Assessment section structure**: For assessments, each section gets its own content module. The section module name should indicate the section (e.g., `10-section-a.js`, `20-section-b.js`). Each section module lays out its questions in order: MC first (with `C.mcQuestion()`), then short answer (with `C.linedAnswerSpace()` and `C.sentenceStarter()`), then extended response (with `C.scaffoldStep()` and `C.linedAnswerSpace()`). If per-section question counts were specified (e.g., Section A: 6 MC + 4 SA + 2 ER; Section B: 3 MC + 5 SA + 1 ER), respect those exactly per section — do not apply a single mix to all sections.
+
+**Marking key content**: If a separate marking key is requested, create it as a separate content folder (e.g., `content/my-exam-key/`) with files like `01-cover-sheet.js` (answer key cover page) and `10-section-a-answers.js`, `20-section-b-answers.js`. Build it with a separate config pointing `outputFile` at the key file. Use the teacher edition answer box pattern (see Section 9).
+
 ---
 
 ## 7. Content Module Template
