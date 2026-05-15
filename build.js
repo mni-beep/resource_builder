@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, BorderStyle, WidthType, ShadingType
+  AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlignTable
 } = require('docx');
 
 // ---- Load resource configuration ----
@@ -50,70 +50,88 @@ function borderAll(color, size) {
   };
 }
 
-function cellH(text, w) {
+function cellH(text, w, opts = {}) {
   return new TableCell({
     borders: borderAll(C.COLOURS.primary, 8),
     width: { size: w, type: WidthType.DXA },
     shading: { fill: C.COLOURS.primary, type: ShadingType.CLEAR },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
+    textDirection: opts.textDirection,
     children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: "FFFFFF", size: 22 })] })]
   });
 }
 
-function cellP(text, w) {
+function cellP(text, w, opts = {}) {
   return new TableCell({
     borders: borderAll("BFBFBF", 4),
     width: { size: w, type: WidthType.DXA },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
+    textDirection: opts.textDirection,
     children: [new Paragraph({ children: [new TextRun({ text, size: 22 })] })]
   });
 }
 
-function cellPr(paragraphs, w) {
+function cellPr(paragraphs, w, opts = {}) {
   return new TableCell({
     borders: borderAll("BFBFBF", 4),
     width: { size: w, type: WidthType.DXA },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
+    textDirection: opts.textDirection,
     children: paragraphs
   });
 }
 
-function cellE(w, n = 3) {
+function cellE(w, n = 3, opts = {}) {
   const lines = [];
   for (let i = 0; i < n; i++) lines.push(new Paragraph({ children: [new TextRun(" ")] }));
   return new TableCell({
     borders: borderAll("BFBFBF", 4),
     width: { size: w, type: WidthType.DXA },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
+    textDirection: opts.textDirection,
     children: lines
   });
 }
 
-function cellHint(text, w) {
+function cellHint(text, w, opts = {}) {
   return new TableCell({
     borders: borderAll("BFBFBF", 4),
     width: { size: w, type: WidthType.DXA },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
     children: [new Paragraph({ children: [new TextRun({ text, italics: true, color: "808080", size: 20 })] })]
   });
 }
 
-function cellWE(text, w) {
+function cellWE(text, w, opts = {}) {
   return new TableCell({
     borders: borderAll("70AD47", 6),
     width: { size: w, type: WidthType.DXA },
     shading: { fill: "E2EFDA", type: ShadingType.CLEAR },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
     children: [new Paragraph({ children: [new TextRun({ text, size: 22 })] })]
   });
 }
 
-function cellWELabel(label, text, w) {
+function cellWELabel(label, text, w, opts = {}) {
   return new TableCell({
     borders: borderAll("70AD47", 6),
     width: { size: w, type: WidthType.DXA },
     shading: { fill: "E2EFDA", type: ShadingType.CLEAR },
     margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
     children: [
       new Paragraph({ children: [new TextRun({ text: label, bold: true, color: "385723", size: 18 })], spacing: { after: 40 } }),
       new Paragraph({ children: [new TextRun({ text, size: 22 })] })
@@ -121,12 +139,14 @@ function cellWELabel(label, text, w) {
   });
 }
 
-function bdCell(headerText, bodyText, fillColour, w) {
+function bdCell(headerText, bodyText, fillColour, w, opts = {}) {
   return new TableCell({
     borders: borderAll(C.COLOURS.primary, 12),
     width: { size: w, type: WidthType.DXA },
     shading: { fill: fillColour, type: ShadingType.CLEAR },
     margins: { top: 240, bottom: 240, left: 100, right: 100 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
     children: [
       new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: headerText, bold: true, color: C.COLOURS.primary, size: 20 })], spacing: { after: 80 } }),
       new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: bodyText, size: 22 })] }),
@@ -134,12 +154,14 @@ function bdCell(headerText, bodyText, fillColour, w) {
   });
 }
 
-function bdCellRich(headerText, bodyParas, fillColour, w) {
+function bdCellRich(headerText, bodyParas, fillColour, w, opts = {}) {
   return new TableCell({
     borders: borderAll(C.COLOURS.primary, 12),
     width: { size: w, type: WidthType.DXA },
     shading: { fill: fillColour, type: ShadingType.CLEAR },
     margins: { top: 240, bottom: 240, left: 100, right: 100 },
+    columnSpan: opts.columnSpan, rowSpan: opts.rowSpan,
+    verticalAlign: opts.verticalAlign,
     children: [
       new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: headerText, bold: true, color: C.COLOURS.primary, size: 20 })], spacing: { after: 80 } }),
       ...bodyParas
@@ -233,15 +255,47 @@ function loadContentModules(contentDir) {
 const contentDir = config.contentDir || './content';
 const allContent = loadContentModules(contentDir);
 
+// ── Build section properties with optional enhancements ──
+const sectionProps = config.landscape ? { ...C.a4LandscapeProps } : { ...C.a4PageProps };
+
+// Multi-column layout
+if (config.columns && config.columns >= 2) {
+  sectionProps.columns = C.columns(config.columns, { space: config.columnSpace || 720 });
+}
+
+// Page borders
+if (config.pageBorder) {
+  const pb = config.pageBorder;
+  sectionProps.pageBorders = C.pageBorder(pb.style, pb.color, pb.size);
+}
+
+// Even/odd headers
+if (config.evenOddHeaders) {
+  sectionProps.headers = {
+    default: config.header ? C.studentHeader(config.header) : undefined,
+    even: config.header ? C.studentHeader(config.header) : undefined,
+  };
+  sectionProps.footers = {
+    default: config.footer !== false ? C.studentFooter({ totalPages: config.totalPages }) : undefined,
+    even: config.footer !== false ? C.studentFooter({ totalPages: config.totalPages }) : undefined,
+  };
+} else {
+  sectionProps.headers = config.header ? { default: C.studentHeader(config.header) } : undefined;
+  sectionProps.footers = config.footer !== false ? { default: C.studentFooter({ totalPages: config.totalPages }) } : undefined;
+}
+
 const doc = new Document({
   creator: config.creator || "Teaching Resource Builder",
   title: config.title || "Untitled Resource",
   styles: C.docStyles,
   numbering: C.numberingConfig,
+  features: {
+    updateFields: true,  // Auto-update TOC, page refs on open
+  },
   sections: [{
-    properties: config.landscape ? C.a4LandscapeProps : C.a4PageProps,
-    headers: config.header ? { default: C.studentHeader(config.header) } : undefined,
-    footers: config.footer !== false ? { default: C.studentFooter() } : undefined,
+    properties: sectionProps,
+    headers: sectionProps.headers,
+    footers: sectionProps.footers,
     children: allContent
   }]
 });

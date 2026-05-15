@@ -406,7 +406,7 @@ function renderSlide(pptx, def, slideNum, totalSlides, slideW, slideH) {
             rowH: [0.5, ...dataRows.map(() => 0.4)],
             border: { type: "solid", pt: 0.5, color: "BFBFBF" },
             fontFace: C.FONT.body,
-            autoPage: false
+            autoPage: def.autoPage !== false  // auto-paginate large tables by default
           });
         }
         if (def.notes) slide.addNotes(def.notes);
@@ -495,6 +495,91 @@ function renderSlide(pptx, def, slideNum, totalSlides, slideW, slideH) {
             fontSize: 12, italic: true, color: C.COLOURS.greyText,
             align: "center", fontFace: C.FONT.body
           });
+        }
+        if (def.notes) slide.addNotes(def.notes);
+        break;
+      }
+
+      // ---- CHART SLIDE ----
+      case "chart": {
+        const slide = pptx.addSlide();
+        slide.addText(def.title, {
+          x: 0.5, y: 0.3, w: "90%", h: 0.7,
+          fontSize: 28, bold: true, color: C.COLOURS.primary,
+          fontFace: C.FONT.heading
+        });
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0.5, y: 1.05, w: "90%", h: 0.04,
+          fill: { color: C.COLOURS.primary }
+        });
+        if (def.data && def.data.length > 0) {
+          slide.addChart(pptx.ChartType[def.chartType] || pptx.ChartType.bar, def.data, {
+            x: def.position ? def.position.x || 1.0 : 1.0,
+            y: def.position ? def.position.y || 1.3 : 1.3,
+            w: def.size ? def.size.w || 11.3 : 11.3,
+            h: def.size ? def.size.h || 5.5 : 5.5,
+            showLegend: def.showLegend,
+            showTitle: def.showTitle,
+            catAxisLabel: def.catAxisLabel || "",
+            valAxisLabel: def.valAxisLabel || "",
+            catAxisLabelColor: "333333",
+            valAxisLabelColor: "333333",
+          });
+        }
+        if (def.notes) slide.addNotes(def.notes);
+        break;
+      }
+
+      // ---- SHAPE SLIDE ----
+      case "shape": {
+        const slide = pptx.addSlide();
+        if (def.title) {
+          slide.addText(def.title, {
+            x: 0.5, y: 0.3, w: "90%", h: 0.7,
+            fontSize: 28, bold: true, color: C.COLOURS.primary,
+            fontFace: C.FONT.heading
+          });
+          slide.addShape(pptx.ShapeType.rect, {
+            x: 0.5, y: 1.05, w: "90%", h: 0.04,
+            fill: { color: C.COLOURS.primary }
+          });
+        }
+        if (def.shapes && def.shapes.length > 0) {
+          for (const sh of def.shapes) {
+            const shapeName = pptx.shapes[sh.name] || pptx.ShapeType[sh.name] || sh.name;
+            slide.addShape(shapeName, {
+              ...sh.options,
+              shapeName: sh.options?.shapeName || undefined,
+            });
+          }
+        }
+        if (def.notes) slide.addNotes(def.notes);
+        break;
+      }
+
+      // ---- AUDIO SLIDE ----
+      case "audio": {
+        const slide = pptx.addSlide();
+        slide.addText(def.title, {
+          x: 0.5, y: 0.3, w: "90%", h: 0.7,
+          fontSize: 28, bold: true, color: C.COLOURS.primary,
+          fontFace: C.FONT.heading
+        });
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0.5, y: 1.05, w: "90%", h: 0.04,
+          fill: { color: C.COLOURS.primary }
+        });
+        if (def.audio) {
+          const audioOpts = {
+            type: "audio",
+            path: def.audio,
+            x: def.position ? def.position.x || 1.0 : 1.0,
+            y: def.position ? def.position.y || 1.5 : 1.5,
+            w: def.position ? def.position.w || 11.3 : 11.3,
+            h: def.position ? def.position.h || 2.0 : 2.0,
+          };
+          if (def.cover) audioOpts.cover = def.cover;
+          slide.addMedia(audioOpts);
         }
         if (def.notes) slide.addNotes(def.notes);
         break;
@@ -1647,13 +1732,51 @@ function renderSlide(pptx, def, slideNum, totalSlides, slideW, slideH) {
     pptx.layout = "CUSTOM";
   }
 
+  // ── Slide Masters (if defined in config) ──
+  if (config.slideMasters && Array.isArray(config.slideMasters)) {
+    for (const master of config.slideMasters) {
+      const masterDef = C.slideMaster(master);
+      pptx.addSlideMaster({
+        title: masterDef.title,
+        objects: masterDef.objects || [],
+        background: masterDef.background || undefined,
+        slideNumber: masterDef.slideNumber || undefined,
+      });
+      console.log(`  🎨 Slide master: ${masterDef.title}`);
+    }
+  }
+
+  // ── Sections (group slides) ──
+  let currentSection = null;
+  const renderedSlideDefs = [];  // non-section defs only
+
   // Render all slides
-  const totalSlides = allSlideDefs.length;
+  const totalSlides = allSlideDefs.filter(d => d.type !== "section").length;
   const slideW = config.landscape ? C.SLIDE.widescreen.w : C.SLIDE.standard.w;
   const slideH = config.landscape ? C.SLIDE.widescreen.h : C.SLIDE.standard.h;
-  allSlideDefs.forEach((def, i) => {
-    renderSlide(pptx, def, i + 1, totalSlides, slideW, slideH);
-  });
+
+  let slideIndex = 0;
+  for (const def of allSlideDefs) {
+    if (def.type === "section") {
+      pptx.addSection({ title: def.title });
+      currentSection = def.title;
+      continue;
+    }
+    slideIndex++;
+    renderSlide(pptx, def, slideIndex, totalSlides, slideW, slideH);
+
+    // ── Slide numbers (per-slide config) ──
+    const lastSlide = pptx.slides[pptx.slides.length - 1];
+    if (lastSlide && (def.slideNumber || config.slideNumbers)) {
+      const sn = def.slideNumber || config.slideNumbers;
+      lastSlide.slideNumber = {
+        x: sn.x || "50%",
+        y: sn.y || "95%",
+        color: sn.color || C.COLOURS.greyText,
+        fontSize: sn.fontSize || 10,
+      };
+    }
+  }
 
   // Write output
   const outputPath = config.outputFile || './output/resource.pptx';
@@ -1663,9 +1786,14 @@ function renderSlide(pptx, def, slideNum, totalSlides, slideW, slideH) {
   }
 
   try {
-    await pptx.writeFile({ fileName: outputPath });
+    const writeOpts = { fileName: outputPath };
+    if (config.compression) writeOpts.compression = true;
+    await pptx.writeFile(writeOpts);
     console.log(`✓ Done → ${outputPath}`);
-    console.log(`  ${allSlideDefs.length} slides generated.\n`);
+    console.log(`  ${totalSlides} slides generated.`);
+    if (config.slideMasters) console.log(`  ${config.slideMasters.length} slide master(s).`);
+    if (config.compression) console.log(`  Compression: enabled.`);
+    console.log();
   } catch (err) {
     console.error(`✗ Build failed: ${err.message}`);
     process.exit(1);

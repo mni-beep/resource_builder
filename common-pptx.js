@@ -342,7 +342,8 @@ function summarySlide(title, bullets) {
  */
 function richRun(text, opts = {}) {
   return { text, ...opts };
-  // opts: bold, italic, color, fontSize, font
+  // opts: bold, italic, color, fontSize, font,
+  //       underline, strike, highlight, glow, reflection, shadow
 }
 
 /**
@@ -1650,8 +1651,99 @@ function wrapUpSlide(eyebrow, title, takeaways, nextTitle, nextText, opts = {}) 
 }
 
 // ============================================================
-// EXPORTS
+// NEW HELPERS — Charts, Shapes, Audio, Hyperlinks,
+//   Backgrounds, Slide Masters, Sections, Slide Numbers
 // ============================================================
+
+// ---- CHART SLIDE ----
+function chartSlide(title, chartType, data, opts = {}) {
+  return {
+    type: "chart",
+    title: title || "",
+    chartType: chartType || "bar",
+    data: data || [],
+    showLegend: opts.showLegend !== false,
+    showTitle: opts.showTitle !== false,
+    catAxisLabel: opts.catAxisLabel || "",
+    valAxisLabel: opts.valAxisLabel || "",
+    notes: opts.notes || "",
+    size: opts.size || null,
+    position: opts.position || null,
+  };
+}
+
+// ---- SHAPE SLIDE ----
+function shapeSlide(title, shapes, opts = {}) {
+  return {
+    type: "shape",
+    title: title || "",
+    shapes: shapes || [],  // array of { name, options }
+    notes: opts.notes || "",
+  };
+}
+
+// ---- AUDIO SLIDE ----
+function audioSlide(title, audioPath, opts = {}) {
+  return {
+    type: "audio",
+    title: title || "",
+    audio: audioPath,
+    cover: opts.cover || null,
+    notes: opts.notes || "",
+    position: opts.position || null,
+  };
+}
+
+// ---- HYPERLINK HELPER ----
+function hyperlink(url, opts = {}) {
+  return {
+    url: url,
+    tooltip: opts.tooltip || "",
+    isSlideLink: opts.isSlideLink || false,
+  };
+}
+
+// ---- SLIDE MASTER DEFINITION ----
+function slideMaster(opts = {}) {
+  return {
+    type: "master",
+    title: opts.title || "Custom Master",
+    objects: opts.objects || [],  // { type, options } objects
+    background: opts.background || null,
+    slideNumber: opts.slideNumber || null,
+  };
+}
+
+// ---- BACKGROUND DEFINITION ----
+function background(def) {
+  return def;  // { color, path, data, transparency }
+}
+
+// ---- SECTION DEFINITION ----
+function section(title) {
+  return { type: "section", title };
+}
+
+// ---- SLIDE NUMBER CONFIG ----
+function slideNumberConfig(opts = {}) {
+  return {
+    x: opts.x || "50%",
+    y: opts.y || "95%",
+    color: opts.color || COLOURS.greyText,
+    fontSize: opts.fontSize || 10,
+  };
+}
+
+// ---- LINE PROPERTIES (for shapes) ----
+function lineProps(opts = {}) {
+  return {
+    color: opts.color || COLOURS.primary,
+    width: opts.width || 2,
+    dashType: opts.dashType || "solid",
+    beginArrowType: opts.beginArrowType || null,
+    endArrowType: opts.endArrowType || null,
+  };
+}
 
 module.exports = {
   // Constants
@@ -1727,4 +1819,9 @@ module.exports = {
   // Video / YouTube helpers
   downloadYouTube,
   videoSlide,
+
+  // ── New helpers ──
+  chartSlide, shapeSlide, audioSlide,
+  hyperlink, slideMaster, background, section,
+  slideNumberConfig, lineProps,
 };

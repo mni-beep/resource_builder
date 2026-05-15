@@ -7,7 +7,20 @@ const {
   Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, BorderStyle, WidthType, ShadingType,
   HeadingLevel, PageBreak, Header, Footer, PageNumber,
-  NumberFormat
+  NumberFormat,
+  // ── New imports for enhanced features ──
+  ImageRun,
+  TableOfContents, StyleLevel,
+  Bookmark, InternalHyperlink, PageReference, ExternalHyperlink,
+  TabStopDefinition, TabStopType, MaxRightTabStop,
+  VerticalAlignTable,
+  CheckBox,
+  Column,
+  Math, MathRun, MathFraction, MathRadical, MathNumerator, MathDenominator,
+  MathSubScript, MathSuperScript,
+  Comment, CommentRangeStart, CommentRangeEnd, CommentReference,
+  Footnote, FootnoteReferenceRun,
+  PageBorderDisplay, PageBorderZOrder,
 } = require('docx');
 
 // ---- COLOUR PALETTE ----
@@ -85,14 +98,20 @@ function studentHeader(text) {
   });
 }
 
-function studentFooter() {
+function studentFooter(opts = {}) {
+  const { totalPages } = opts;
+  const children = [
+    new TextRun({ text: "Page ", size: 18, color: "808080" }),
+    new TextRun({ children: [PageNumber.CURRENT], size: 18, color: "808080" })
+  ];
+  if (totalPages) {
+    children.push(new TextRun({ text: " of ", size: 18, color: "808080" }));
+    children.push(new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, color: "808080" }));
+  }
   return new Footer({
     children: [new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [
-        new TextRun({ text: "Page ", size: 18, color: "808080" }),
-        new TextRun({ children: [PageNumber.CURRENT], size: 18, color: "808080" })
-      ]
+      children
     })]
   });
 }
@@ -161,7 +180,7 @@ function h4(text) {
 
 // ---- BODY TEXT ----
 function p(text, opts = {}) {
-  return new Paragraph({
+  const paraOpts = {
     spacing: { after: opts.after !== undefined ? opts.after : 120, before: opts.before || 0 },
     alignment: opts.alignment || AlignmentType.LEFT,
     indent: opts.indent || undefined,
@@ -173,7 +192,10 @@ function p(text, opts = {}) {
       size: opts.size || 22,
       font: opts.font || undefined
     })]
-  });
+  };
+  if (opts.pageBreakBefore) paraOpts.pageBreakBefore = true;
+  if (opts.tabStops) paraOpts.tabStops = opts.tabStops;
+  return new Paragraph(paraOpts);
 }
 
 // ---- BULLETS ----
@@ -428,6 +450,182 @@ function mcQuestion(n, stem, options, ref) {
   ];
 }
 
+// ════════════════════════════════════════════════════════════
+// NEW HELPERS — Table of Contents, Images, Links, Bookmarks,
+//   Checkboxes, Tab Stops, Math, Comments, Footnotes,
+//   Columns, Page Borders
+// ════════════════════════════════════════════════════════════
+
+// ---- TABLE OF CONTENTS ----
+function toc(title, opts = {}) {
+  return new TableOfContents(title || "Table of Contents", {
+    hyperlink: opts.hyperlink !== false,
+    headingStyleRange: opts.headingStyleRange || "1-4",
+    ...opts
+  });
+}
+
+// ---- IMAGE ----
+function image(data, transformation, opts = {}) {
+  const type = opts.type || (Buffer.isBuffer(data) ? "png" : "jpg");
+  return new ImageRun({
+    data: Buffer.isBuffer(data) ? data : data,
+    transformation: transformation || { width: 400, height: 300 },
+    type,
+    ...opts
+  });
+}
+
+function imageFromFile(filePath, transformation, opts = {}) {
+  const fs = require('fs');
+  const data = fs.readFileSync(filePath);
+  const ext = filePath.split('.').pop().toLowerCase();
+  const type = ext === 'jpg' || ext === 'jpeg' ? 'jpg' : ext === 'gif' ? 'gif' : 'png';
+  return image(data, transformation, { ...opts, type });
+}
+
+// ---- CHECKBOX ----
+function checkbox(text, checked) {
+  return new Paragraph({
+    spacing: { after: 60 },
+    children: [
+      new CheckBox({ checked: !!checked }),
+      new TextRun({ text: "  " + text, size: 22 })
+    ]
+  });
+}
+
+// ---- BOOKMARKS & CROSS-REFERENCES ----
+function bookmark(id, text) {
+  return new Bookmark({ id, children: [new TextRun({ text, size: 22 })] });
+}
+
+function pageRef(bookmarkId) {
+  return new PageReference(bookmarkId);
+}
+
+function internalLink(text, bookmarkId) {
+  return new InternalHyperlink({
+    children: [new TextRun({ text, style: "Hyperlink", size: 22 })],
+    anchor: bookmarkId
+  });
+}
+
+function link(text, url) {
+  return new ExternalHyperlink({
+    children: [new TextRun({ text, style: "Hyperlink", size: 22 })],
+    link: url
+  });
+}
+
+// ---- TAB STOPS ----
+function tabStop(type, position) {
+  return {
+    type: type || TabStopType.RIGHT,
+    position: position || 9026
+  };
+}
+
+function dotLeaderTab(position) {
+  return {
+    type: TabStopType.RIGHT,
+    position: position || 9026,
+    leader: "dot"
+  };
+}
+
+// ---- MATH / EQUATIONS ----
+function mathFraction(numerator, denominator) {
+  return new Math({
+    children: [
+      new MathFraction({
+        numerator: new MathNumerator({ children: [new MathRun(numerator)] }),
+        denominator: new MathDenominator({ children: [new MathRun(denominator)] })
+      })
+    ]
+  });
+}
+
+function mathRadical(degree, expression) {
+  return new Math({
+    children: [
+      new MathRadical({
+        children: [new MathRun(expression)],
+        degree: degree ? [new MathRun(String(degree))] : undefined
+      })
+    ]
+  });
+}
+
+function mathSubscript(base, sub) {
+  return new Math({
+    children: [
+      new MathRun(base),
+      new MathSubScript({ children: [new MathRun(sub)] })
+    ]
+  });
+}
+
+function mathSuperscript(base, sup) {
+  return new Math({
+    children: [
+      new MathRun(base),
+      new MathSuperScript({ children: [new MathRun(sup)] })
+    ]
+  });
+}
+
+// ---- COMMENTS ----
+function comment(commentText, opts = {}) {
+  // Returns a Comment object for the document's comments collection,
+  // plus range markers for inline use in paragraphs.
+  const id = opts.id || Math.floor(Math.random() * 1000000);
+  const commentObj = new Comment({
+    id,
+    children: [new Paragraph({ children: [new TextRun({ text: commentText, size: 20 })] })]
+  });
+  // Return the comment + an inline marker to use in paragraphs
+  return {
+    comment: commentObj,
+    id,
+    rangeStart: new CommentRangeStart(id),
+    rangeEnd: new CommentRangeEnd(id),
+    reference: new CommentReference(id)
+  };
+}
+
+// ---- FOOTNOTES ----
+function footnoteRef(footnoteId) {
+  return new FootnoteReferenceRun(footnoteId);
+}
+
+function footnote(footnoteId, text) {
+  return new Footnote({
+    id: footnoteId,
+    children: [new Paragraph({ children: [new TextRun({ text, size: 20 })] })]
+  });
+}
+
+// ---- COLUMNS ----
+function columns(count, opts = {}) {
+  if (!count || count < 2) return undefined;
+  return {
+    column: new Column({ count, space: opts.space || 720 })
+  };
+}
+
+// ---- PAGE BORDER ----
+function pageBorder(style, color, size) {
+  return {
+    display: PageBorderDisplay.ALL_PAGES,
+    top: { style: style || BorderStyle.SINGLE, size: size || 12, color: color || COLOURS.primary },
+    bottom: { style: style || BorderStyle.SINGLE, size: size || 12, color: color || COLOURS.primary },
+    left: { style: style || BorderStyle.SINGLE, size: size || 12, color: color || COLOURS.primary },
+    right: { style: style || BorderStyle.SINGLE, size: size || 12, color: color || COLOURS.primary },
+    zOrder: PageBorderZOrder.FRONT
+  };
+}
+
 module.exports = {
   COLOURS,
   docStyles,
@@ -445,5 +643,13 @@ module.exports = {
   sentenceStarter, scaffoldStep,
   linedAnswerSpace, drawingSpace,
   sectionTag, lessonBanner,
-  workedExample, mcQuestion
+  workedExample, mcQuestion,
+  // ── New helpers ──
+  toc, image, imageFromFile,
+  checkbox,
+  bookmark, pageRef, internalLink, link,
+  tabStop, dotLeaderTab,
+  mathFraction, mathRadical, mathSubscript, mathSuperscript,
+  comment, footnoteRef, footnote,
+  columns, pageBorder,
 };
