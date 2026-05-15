@@ -116,6 +116,7 @@
     <div class="option"><input type="radio" name="q1d" id="q1d-assessment" value="assessment" onchange="updateVisibility()"><label for="q1d-assessment">Assessment / exam</label></div>
     <div class="option"><input type="radio" name="q1d" id="q1d-lab" value="lab" onchange="updateVisibility()"><label for="q1d-lab">Lab / practical manual</label></div>
     <div class="option"><input type="radio" name="q1d" id="q1d-revision" value="revision" onchange="updateVisibility()"><label for="q1d-revision">Revision / study guide</label></div>
+    <div class="option"><input type="radio" name="q1d" id="q1d-activities" value="activities" onchange="updateVisibility()"><label for="q1d-activities">In-class activities</label></div>
   </div>
 </div>
 
@@ -245,6 +246,19 @@
     <label><input type="checkbox" id="q4rd-questions"> Include practice questions</label>
   </div>
   <div class="field" id="fld-q4rd-qpt" style="margin-top:8px"><label>Questions per topic (if included)</label><input type="number" id="q4rd-qpt" min="0" value="3"></div>
+</div>
+
+<!-- Q4: DOCX In-Class Activities -->
+<div class="section hidden" id="sec-q4-activities">
+  <h2><span class="num">4</span> Structure — In-Class Activities</h2>
+  <div class="field"><label>How many activities?</label><input type="number" id="q4ac-count" min="1" value="4"></div>
+  <div class="checklist" style="margin-top:12px">
+    <label><input type="checkbox" id="q4ac-materials" checked> Include materials list per activity</label>
+    <label><input type="checkbox" id="q4ac-reflection"> Include reflection / exit ticket per activity</label>
+    <label><input type="checkbox" id="q4ac-teacher" checked> Include teacher instructions page (setup, timing, answers)</label>
+    <label><input type="checkbox" id="q4ac-cover"> Include cover page</label>
+  </div>
+  <div class="field" style="margin-top:12px"><label>Any specific activity types or themes?</label><textarea id="q4ac-types" rows="2" placeholder="e.g. Card sorts, station rotations, circuit builders, group challenges…&#10;Leave blank and the agent will vary them."></textarea></div>
 </div>
 
 <!-- Q4: PPTX E5 -->
@@ -533,6 +547,7 @@ function updateVisibility() {
   const isAssessment = q1d === 'assessment';
   const isLab = q1d === 'lab';
   const isRevision = q1d === 'revision';
+  const isActivities = q1d === 'activities';
   const isDocxWS = q1d === 'worksheet';  // worksheet only — revision has its own Q4
   const isE5 = q1p === 'e5';
   const isStandardPptx = q1p === 'standard';
@@ -547,6 +562,7 @@ function updateVisibility() {
   showIf('sec-q4-assessment', isDocx && isAssessment);
   showIf('sec-q4-lab', isDocx && isLab);
   showIf('sec-q4-revision-docx', isDocx && isRevision);
+  showIf('sec-q4-activities', isDocx && isActivities);
 
   // Q4: PPTX branches
   showIf('sec-q4-e5', isPptx && isE5);
@@ -584,7 +600,7 @@ function updateVisibility() {
 
   // Q5: DOCX question-based resources only (NOT unit guide, assessment, lab, revision); or PPTX with companion worksheet
   const hasCompanionWs = e5wsYes || stdWsYes;
-  const isDocxPlanningDoc = isUnitGuide || isAssessment || isLab || isRevision;
+  const isDocxPlanningDoc = isUnitGuide || isAssessment || isLab || isRevision || isActivities;
   showIf('sec-q5', started && ((isDocx && !isDocxPlanningDoc) || hasCompanionWs));
   // Update Q5 heading + description based on context
   const q5Title = document.querySelector('#sec-q5 h2');
@@ -681,7 +697,7 @@ function generatePrompt() {
   // Q1
   const typeMap = {
     worksheet:'Single worksheet', booklet:'Multi-lesson booklet', 'booklet-te':'Multi-lesson booklet + teacher edition',
-    unitguide:'Week-by-week unit guide', assessment:'Assessment / exam', lab:'Lab / practical manual', revision:'Revision / study guide',
+    unitguide:'Week-by-week unit guide', assessment:'Assessment / exam', lab:'Lab / practical manual', revision:'Revision / study guide', activities:'In-class activities',
     standard:'Standard lesson deck', e5:'E5 lesson deck', short:'Short presentation',
     'revision-pptx':'Revision deck', 'assessment-pptx':'Assessment walkthrough', 'lab-pptx':'Lab/practical intro'
   };
@@ -756,6 +772,10 @@ function generatePrompt() {
   if (isDocx && q1d === 'revision') {
     q4details.push(`  Topics: ${v('q4rd-topics')}, Density: ${qval('q4rd-density')}, Glossary: ${v('q4rd-glossary')}, Formulas: ${v('q4rd-formulas')}, Practice questions: ${v('q4rd-questions')}`);
     if (v('q4rd-questions') === 'Yes') q4details.push(`  Questions per topic: ${v('q4rd-qpt','3')}`);
+  }
+  if (isDocx && q1d === 'activities') {
+    q4details.push(`  Activities: ${v('q4ac-count')}, Materials list: ${v('q4ac-materials')}, Reflections: ${v('q4ac-reflection')}, Teacher instructions: ${v('q4ac-teacher')}, Cover page: ${v('q4ac-cover')}`);
+    if (v('q4ac-types')) q4details.push(`  Activity types/themes: ${v('q4ac-types')}`);
   }
   if (isPptx && q1p === 'revision-pptx') {
     q4details.push(`  Topics: ${v('q4r-topics')}, Dividers: ${v('q4r-dividers')}, Questions: ${v('q4r-questions')}, Per topic: ${v('q4r-per')}`);

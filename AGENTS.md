@@ -2,12 +2,12 @@
 
 ## What this project is
 
-A Node.js pipeline that generates `.docx` teaching resources (worksheets, booklets, unit guides, assessments, lab manuals, revision guides) from JavaScript content modules. The full specification is in `DOCX_BUILDER_REFERENCE.md`.
+A Node.js pipeline that generates `.docx` teaching resources (worksheets, booklets, unit guides, assessments, lab manuals, revision guides, in-class activities) from JavaScript content modules. The full specification is in `DOCX_BUILDER_REFERENCE.md`.
 
 ## Your job as an agent
 
 When a user asks you to create a teaching resource, first ask whether they want:
-1. **A DOCX document** (worksheet, booklet, unit guide, assessment, lab manual, revision guide) — uses `build.js`
+1. **A DOCX document** (worksheet, booklet, unit guide, assessment, lab manual, revision guide, in-class activities) — uses `build.js`
 2. **A PPTX slide deck** (standard lesson, E5 lesson, revision presentation, assessment walkthrough, lab intro) — uses `build-pptx.js`
 
 Then ask whether they want to:
@@ -31,7 +31,7 @@ Ask the following questions. The questions you ask **branch based on Question 0 
 ### Question 0: OUTPUT FORMAT (determines which pipeline to use)
 
 What format should the resource be?
-- [ ] **DOCX (printable document)** — worksheets, booklets, unit guides, assessments, lab manuals, revision guides
+- [ ] **DOCX (printable document)** — worksheets, booklets, unit guides, assessments, lab manuals, revision guides, in-class activities
 - [ ] **PPTX (slide deck)** — standard lessons, E5 lessons, revision presentations, assessment walkthroughs, lab introductions
 
 > **If DOCX:** Use `build.js`, reference `DOCX_BUILDER_REFERENCE.md`, content modules return arrays of docx elements.
@@ -49,6 +49,7 @@ What format should the resource be?
 - [ ] **Assessment / exam** (questions only, possibly with separate marking key)
 - [ ] **Lab / practical manual** (procedures + report templates)
 - [ ] **Revision / study guide** (dense theory, reference tables, no questions)
+- [ ] **In-class activities** (printable activity sheets — card sorts, station rotations, group challenges, etc.)
 - [ ] **Other** (describe): ___________
 
 **For PPTX:**
@@ -224,12 +225,20 @@ Ask the user which visual style they prefer for the deck:
 - Should it include practice questions? [ ] Yes  [ ] No
 - If yes, how many questions per topic? ___________
 
+**For in-class activities:**
+- How many activities? ___________
+- Should each activity include a materials list? [ ] Yes  [ ] No
+- Should each activity include reflection / exit ticket questions? [ ] Yes  [ ] No
+- Should it include a teacher instructions page (setup, timing, answers)? [ ] Yes  [ ] No
+- Should it have a cover page? [ ] Yes  [ ] No
+- Any specific activity types or themes? ___________ (card sorts, station rotations, group challenges, circuit builders, data collection, design tasks, discussion prompts — leave blank for variety)
+
 ---
 
 ### Question 5: WORKSHEETS & QUESTION MIX
 
 > **This section is for DOCX resources AND for companion DOCX worksheets (E5 Elaborate or standard PPTX lesson).**
-> **Skip for:** assessments, unit guides, lab manuals, and revision guides — these resource types have their own question/activity structures defined in Question 4. Q5 only appears for worksheets, booklets, and PPTX companion worksheets.
+> **Skip for:** assessments, unit guides, lab manuals, revision guides, and in-class activities — these resource types have their own question/activity structures defined in Question 4. Q5 only appears for worksheets, booklets, and PPTX companion worksheets.
 > **Skip the detailed question-types checklist for PPTX slide-deck questions** — in PPTX, questions are individual slides (MC → `C.mcQuestionSlide()`, short answer → `C.shortAnswerSlide()`, extended response → `C.extendedResponseSlide()`), and the number of each was covered in Question 4. This section is for companion DOCX worksheets only.
 
 **For DOCX resources (worksheets, booklets, assessments):**
@@ -307,7 +316,7 @@ Collect these additional details for the worksheet (YES path only):
 
 ### Question 6: SCAFFOLDING INTENSITY (ask for worksheets, booklets, and slide decks with a companion worksheet)
 
-> **Skip for:** assessments, unit guides (assessment scaffolding not applicable; unit guides are teacher planning documents), and PPTX decks where the user chose **"No"** for the companion worksheet (either "No — slide activities only" or "No — no slide activities"). Scaffolding only applies when a DOCX worksheet is being built — slide-level activities don't use the scaffolding system.
+> **Skip for:** assessments, unit guides, lab manuals, revision guides, and in-class activities (these types have their own activity/question structures). Also skip for PPTX decks where the user chose **"No"** for the companion worksheet. Scaffolding only applies when a DOCX worksheet or booklet is being built — slide-level activities and planning documents don't use the scaffolding system.
 
 How much support baked in?
 - [ ] Heavy — sentence starters, planning steps, hints pointing to exact answers, hidden answers under every "try it"
