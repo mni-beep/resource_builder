@@ -8,11 +8,13 @@ Describe what you want, answer a few questions, and this tool produces print-rea
 
 ## 🌐 Web Questionnaire
 
-Use the hosted questionnaire to quickly generate a structured prompt for an AI coding agent:
+Use the hosted questionnaire to quickly generate a structured prompt for an AI coding agent. The form supports two modes:
+- **📋 Guided questionnaire** — answer structured questions about your resource
+- **✏️ Custom instructions** — describe exactly what you want in your own words
 
 👉 **[https://webtoolquestionaire-git-main-mni-beeps-projects.vercel.app/](https://webtoolquestionaire-git-main-mni-beeps-projects.vercel.app/)**
 
-Fill in the form, copy the generated prompt at the end, and paste it into your AI agent to build the resource.
+Fill in the form (or type your instructions), copy the generated prompt, and paste it into your AI agent to build the resource.
 
 ---
 
@@ -29,6 +31,9 @@ Fill in the form, copy the generated prompt at the end, and paste it into your A
 | **Assessment / exam** | 🆕 Available — sections, marking key support |
 | **Lab / practical manual** | 🆕 Available — procedures + report templates |
 | **Revision / study guide** | 🆕 Available — dense theory, reference tables |
+| **In-class activities** | 🆕 Available — card sorts, station rotations, group challenges, observation stations |
+| **Printed resources** | 🆕 Available — auto-generated card sets, templates, recording sheets, checklists, cut-out materials |
+| **Problem set** | 🆕 Available — topic-organised practice with worked examples, "now you try" mirrored pairs, integrated answer key |
 
 ### PPTX (screen-presented slide decks)
 
@@ -51,6 +56,9 @@ Fill in the form, copy the generated prompt at the end, and paste it into your A
 - **Structured boxes** — Callout boxes, worked examples (green), hint boxes (grey), lesson banners, teacher sign-off, completion checklists
 - **Diagrams** — ASCII diagrams using box-drawing characters (offline-friendly), or open-source images from subject repositories (OpenStax, Wikimedia, PhET, NASA, etc.)
 - **Teacher editions** — Separate build with green answer boxes, amber teaching notes, marking criteria
+- **Printed resource generator** — Auto-built card sets, jigsaw pieces, recording sheets, peer-review checklists, drawing templates — cut-out ready with dashed borders
+- **Problem set builder** — Topic-organised practice with graduated difficulty (Easy→Hard within sections), worked examples + mirrored "now you try" pairs, and integrated or separate answer key
+- **Word corruption protection** — Dynamic numbering registry eliminates unused abstractNum definitions that caused Word to reject large documents
 
 ### PPTX
 - **E5 instructional model** — Learning Intention → Engage → Explore → Explain → Elaborate → Evaluate, with colour-coded phase buttons and SM (Success Measure) bars
@@ -138,6 +146,9 @@ resource_builder/
 │   ├── e5-voltage-lesson/             ← PPTX: E5 lesson example
 │   ├── circuit-components-worksheet/  ← DOCX: single worksheet
 │   ├── diseases-comparison-worksheet/ ← DOCX: comparison worksheet
+│   ├── diseases-unit-guide/           ← DOCX: week-by-week unit guide (landscape 7-column table)
+│   ├── atomic-theory-activities/      ← DOCX: in-class activities (5 activity modules + teacher notes)
+│   ├── atomic-theory-printables/      ← DOCX: printed resources (cards, templates, checklists)
 │   ├── images/                        ← Shared image files
 │   └── videos/                        ← Cached YouTube MP4s
 ├── tools/
