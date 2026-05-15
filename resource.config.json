@@ -1,9 +1,9 @@
 {
-  "title": "Year 9 Science · Module 1: Atomic Structure — Unit Guide",
+  "title": "Year 9 Science · Module 2: Diseases — Unit Guide",
   "creator": "Science Department",
-  "outputFile": "./output/atomic-structure-unit-guide.docx",
-  "header": "Year 9 Science · Atomic Structure — Unit Guide",
-  "contentDir": "./content/atomic-structure-unit-guide",
+  "outputFile": "./output/diseases-unit-guide.docx",
+  "header": "Year 9 Science · Module 2: Diseases — Unit Guide",
+  "contentDir": "./content/diseases-unit-guide",
   "footer": true,
   "landscape": true
 }
