@@ -28,12 +28,12 @@ Fill in the form (or type your instructions), copy the generated prompt, and pas
 | **Multi-lesson booklet** | ✅ Tested — cover, contents, how-to page, lessons, glossary |
 | **Booklet + teacher edition** | ✅ Tested — student booklet + separate answer key with marking criteria |
 | **Unit guide / curriculum map** | ✅ Tested — landscape table, 7 columns, full term planning |
-| **Assessment / exam** | 🆕 Available — sections, marking key support |
+| **Assessment / exam** | ✅ Tested — sections, marking key, VCAA-compliant math styling (italic variables, native DOCX equations) |
 | **Lab / practical manual** | 🆕 Available — procedures + report templates |
 | **Revision / study guide** | 🆕 Available — dense theory, reference tables |
 | **In-class activities** | 🆕 Available — card sorts, station rotations, group challenges, observation stations |
 | **Printed resources** | 🆕 Available — auto-generated card sets, templates, recording sheets, checklists, cut-out materials |
-| **Problem set** | 🆕 Available — topic-organised practice with worked examples, "now you try" mirrored pairs, integrated answer key |
+| **Problem set** | ✅ Tested — topic-organised practice with worked examples, "now you try" mirrored pairs, integrated answer key (Physics fields tested) |
 
 ### PPTX (screen-presented slide decks)
 
@@ -54,7 +54,8 @@ Fill in the form (or type your instructions), copy the generated prompt, and pas
 - **14+ question types** — MC, short answer, extended response, fill-in tables, three-tier scaffolding, comparison tables, practical-on-paper, code-writing
 - **Configurable scaffolding** — Heavy (sentence starters + hidden answers), Moderate (hints + checklists), Light (blank spaces), or Mix
 - **Structured boxes** — Callout boxes, worked examples (green), hint boxes (grey), lesson banners, teacher sign-off, completion checklists
-- **Diagrams** — ASCII diagrams using box-drawing characters (offline-friendly), or open-source images from subject repositories (OpenStax, Wikimedia, PhET, NASA, etc.)
+- **Diagrams** — ASCII diagrams using box-drawing characters (offline-friendly), open-source images from subject repositories (OpenStax, Wikimedia, PhET, NASA, etc.), OR **programmatically rendered graphs/diagrams** via `tools/render_graph.py` (matplotlib for scientific graphs, schemdraw for circuit schematics, svgwrite for vector diagrams)
+- **VCAA exam styling** — Italic scalar variables, native DOCX math equations (`C.mathPara()`, `C.mathFormula()`, `C.mathSubscript()`), clean exam body without decorative colours — compliant with VCE/VCAL typesetting conventions
 - **Teacher editions** — Separate build with green answer boxes, amber teaching notes, marking criteria
 - **Printed resource generator** — Auto-built card sets, jigsaw pieces, recording sheets, peer-review checklists, drawing templates — cut-out ready with dashed borders
 - **Problem set builder** — Topic-organised practice with graduated difficulty (Easy→Hard within sections), worked examples + mirrored "now you try" pairs, and integrated or separate answer key
@@ -66,6 +67,7 @@ Fill in the form (or type your instructions), copy the generated prompt, and pas
 - **Speaker notes** — All answers, teaching guidance, and marking criteria go into speaker notes for Presenter View (no separate teacher file needed)
 - **🎬 Embedded YouTube videos** — Auto-searches the web for relevant educational videos, downloads via `yt-dlp`, embeds playable MP4 directly in Engage/Explore slides (see below)
 - **🖼️ Open-source images** — Auto-resolved from `content/images/` with figure captions
+- **📊 Rendered graphs & diagrams** — Generate publication-quality scientific graphs, circuit schematics, and vector diagrams from JSON specs using `tools/render_graph.py`. Embed via `C.imageSlide()`. See `PPTX_BUILDER_REFERENCE.md` Section 11.
 - **Companion worksheets** — E5 Elaborate phase can pair with a DOCX worksheet (activities + peer review + answer key)
 
 ### Image Acquisition
@@ -74,6 +76,24 @@ Fill in the form (or type your instructions), copy the generated prompt, and pas
 - **Source-aware routing** — Handles direct URLs, Wikimedia Commons, OpenClipart, PHIL/CDC, OpenStax, Pixabay, NASA, and similar sources without switching workflows
 - **Safer downloads** — Rejects HTML masquerading as image files, keeps browser-like headers, and uses screenshot fallback for canvas/SPA cases such as Desmos
 - **Known limits** — Cloudflare/authenticated sources such as Library of Congress, David Rumsey, and most Fritzing/Tinkercad project links still require manual capture
+
+### Graph & Diagram Generation 📊
+
+| Renderer | Tool | Output | Use Cases |
+|---|---|---|---|
+| Scientific graphs | `matplotlib` (headless Agg backend) | PNG @ 300 DPI | I-V curves, force-distance, wave patterns, projectile trajectories, K_max vs f, energy level diagrams |
+| Circuit schematics | `schemdraw` | SVG | Resistors, capacitors, diodes, transistors, opamps, logic gates, Arduino/electronics wiring |
+| Vector diagrams | `svgwrite` | SVG | Force diagrams (free-body), ray optics, block diagrams, flowcharts |
+
+```powershell
+# Generate a graph from a JSON spec
+python tools/render_graph.py --spec content/my-resource/graphs/iv-curve.json --out images/iv-curve.png
+
+# Dump example specs for all three renderer types
+python tools/render_graph.py --example
+```
+
+All rendered output uses **VCAA-compliant defaults** (Calibri 11pt, clean black-on-white, italic axis labels for variables, 300 DPI). Full spec API in `DOCX_BUILDER_REFERENCE.md` Section 15 and `PPTX_BUILDER_REFERENCE.md` Section 11.
 
 ### YouTube Video Pipeline 🎬
 
@@ -107,15 +127,18 @@ If corruption is detected, the build **refuses to continue** with a clear error 
 ### For AI Agents
 
 Three instruction files control the workflow:
-- **`AGENTS.md`** — Mandatory interview process (9 questions) + build phases + rules
-- **`DOCX_BUILDER_REFERENCE.md`** — Complete DOCX helper reference (C.* and H.*)
-- **`PPTX_BUILDER_REFERENCE.md`** — Complete PPTX helper reference (C.* and H.*)
+- **`AGENTS.md`** — Mandatory interview process (9 questions) + build phases + rules (now includes graph rendering pre-build step)
+- **`DOCX_BUILDER_REFERENCE.md`** — Complete DOCX helper reference (C.* and H.*), **Section 15** covers graph/diagram spec API
+- **`PPTX_BUILDER_REFERENCE.md`** — Complete PPTX helper reference (C.* and H.*), **Section 11** covers graph embedding in slides
+- **`E5_MODEL_BIBLE.md`** — Pedagogical reference for E5 (Engage→Explore→Explain→Elaborate→Evaluate) instructional model
+- **`VCAA Exam Styling`** — Stored in agent memory (`/memories/vcaa-exam-styling.md`): italic math variables, native DOCX equations, clean exam body
 
 ### Quick Start
 
 ```powershell
 npm install              # one-time: installs project dependencies, including Playwright
 npx playwright install chromium   # one-time: enables browser-backed image extraction
+python -m pip install matplotlib numpy schemdraw svgwrite  # one-time: graph/diagram rendering
 # ... agent creates content modules ...
 node build.js            # generate .docx
 node build-pptx.js       # generate .pptx
@@ -132,11 +155,12 @@ Output lands in `output/`.
 resource_builder/
 ├── build.js                    ← DOCX build pipeline (+ validation)
 ├── build-pptx.js               ← PPTX build pipeline (+ validation)
-├── common.js                   ← DOCX shared helpers (C)
+├── common.js                   ← DOCX shared helpers (C) — includes math equation helpers (C.mathPara, C.mathFormula, etc.)
 ├── common-pptx.js              ← PPTX shared helpers (C) + video download
 ├── resource.config.json        ← Per-resource config
 ├── content/                    ← Resource subfolders
-│   ├── series-circuits-e5-lesson/     ← PPTX: E5 lesson with video
+│   ├── vce-physics-u34-exam/          ← DOCX: VCE Units 3&4 exam (20 MC + 19 ER, 120 marks, marking key, VCAA math styling)
+│   ├── physics-fields-problem-set/    ← DOCX: Physics fields problem set (proper math equations via C.math* helpers)
 │   ├── series-circuits-worksheet/     ← DOCX: companion worksheet
 │   ├── dichotomous-key-e5-lesson/     ← PPTX: E5 lesson example
 │   ├── electronics-intro-pptx/        ← PPTX: standard lesson example
@@ -152,8 +176,11 @@ resource_builder/
 │   ├── images/                        ← Shared image files
 │   └── videos/                        ← Cached YouTube MP4s
 ├── tools/
+│   ├── render_graph.py         ← Graph/circuit/diagram renderer (matplotlib + schemdraw + svgwrite)
 │   ├── browser_image_helper.cjs ← Playwright helper for JS-rendered image extraction
 │   ├── download_image.py        ← Unified image downloader / scraper entrypoint
+│   ├── validate.js              ← Content module validator
+│   ├── diagnose_docx.js         ← DOCX corruption diagnostics
 │   └── yt-dlp.exe              ← YouTube downloader (one-time setup)
 ├── AGENTS.md                   ← Agent instructions
 ├── DOCX_BUILDER_REFERENCE.md   ← DOCX technical reference
@@ -173,6 +200,7 @@ resource_builder/
 | [`pptxgenjs`](https://www.npmjs.com/package/pptxgenjs) | Pure JS `.pptx` generator | ✅ For PPTX |
 | [`playwright`](https://www.npmjs.com/package/playwright) | Browser-rendered image extraction for JS-heavy sources | ⚠️ Needed for automated web image capture |
 | Python + `requests` + `beautifulsoup4` | Unified image downloader and source-specific scraping | ⚠️ Needed for automated web image capture |
+| Python + `matplotlib` + `numpy` + `schemdraw` + `svgwrite` | Graph/circuit/diagram rendering (`tools/render_graph.py`) | ⚠️ Needed for programmatic diagram generation |
 | `yt-dlp.exe` (in `tools/`) | YouTube video downloader | ✅ For video embedding |
 | `ffmpeg` (system PATH or `tools/`) | Best-quality video encoding | ⚠️ Optional — fallback works without it |
 | Node.js 18+ | Runtime | ✅ |

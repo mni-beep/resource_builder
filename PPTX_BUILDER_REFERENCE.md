@@ -504,6 +504,8 @@ C.successCriteriaPanel(title, items[], { intro? })  // render fragment
 C.calloutStrip(text, type?)     // render fragment
 ```
 
+> **📊 For graphs and diagrams:** Use `tools/render_graph.py` to generate publication-quality images from JSON specs. See Section 11 and `DOCX_BUILDER_REFERENCE.md` Section 15 for the full spec API.
+
 ---
 
 ## 10. E5 Instructional Model
@@ -637,6 +639,93 @@ Produces 6 slides: 1 Learning Intention + 1 per phase.
 **Elaborate slide:** Single-column. Instruction text + activity table with light-green rows. Activity names can be hyperlinked (red underlined).
 
 **Evaluate slide:** Single-column. Centred red underlined assessment link (exit ticket). Optional numbered rubric criteria below.
+
+---
+
+## 11. Graph & Diagram Embedding (PPTX)
+
+### 11.1 Overview
+
+The PPTX pipeline shares the same graph rendering tool as DOCX: `tools/render_graph.py`. Rendered images (PNG for graphs, SVG for circuits/diagrams) are embedded into slides via `C.imageSlide()`.
+
+The full spec format and all renderer options are documented in `DOCX_BUILDER_REFERENCE.md` Section 15 — read that first. This section covers PPTX-specific embedding patterns.
+
+### 11.2 Workflow
+
+```powershell
+# 1. Render the graph/circuit/diagram
+python tools/render_graph.py --spec content/my-lesson/graphs/iv-curve.json --out images/iv-curve.png
+
+# 2. Reference the image in your PPTX content module
+# 3. Build the deck
+node build-pptx.js
+```
+
+### 11.3 Embedding in Slide Definitions
+
+```js
+// In any content module, use C.imageSlide():
+module.exports = function mySlide(C, H) {
+  return [
+    C.imageSlide(
+      "I-V Characteristic of an Ohmic Resistor",   // slide title
+      "images/iv-curve.png",                         // path to rendered image
+      "Figure 1: Current is directly proportional to voltage (R = 22 Ω).",  // caption
+      { notes: "Key teaching point: gradient = 1/R" }
+    )
+  ];
+};
+```
+
+### 11.4 Image Placement on Content Slides
+
+For slides that combine text with a graph (e.g., Explain slides with data), use `C.contentSlide()` with the `image` option:
+
+```js
+C.contentSlide(
+  "Photoelectric Effect Results",
+  [
+    "The graph shows K_max vs frequency for sodium.",
+    "Below the threshold frequency f₀, no electrons are emitted.",
+    "The gradient equals Planck's constant h.",
+  ],
+  {
+    image: "images/photoelectric-graph.png",
+    imageSize: { x: 5.5, y: 1.8, w: 4.5, h: 3.2 },
+    notes: "f₀ ≈ 5.5 × 10¹⁴ Hz, φ = hf₀ ≈ 2.3 eV"
+  }
+)
+```
+
+### 11.5 Circuit Diagrams on Slides
+
+```js
+// Render first:
+// python tools/render_graph.py --spec content/my-lesson/graphs/voltage-divider.json --out images/voltage-divider.svg
+
+// Then embed in a slide:
+C.imageSlide(
+  "Voltage Divider Circuit",
+  "images/voltage-divider.svg",
+  "Figure 2: Two resistors in series divide the input voltage. V_out = V_in × R₂/(R₁+R₂)",
+  { notes: "Walk through the derivation step by step." }
+)
+```
+
+### 11.6 Graph Specs Location
+
+Store graph spec JSON files alongside your content modules:
+
+```
+content/my-lesson/
+├── 01-title.js
+├── 10-explain.js
+├── graphs/
+│   ├── iv-curve.json
+│   └── photoelectric.json
+```
+
+The `graphs/` subfolder keeps specs organised and co-located with the content that uses them.
 
 ---
 

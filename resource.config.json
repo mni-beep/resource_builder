@@ -1,9 +1,9 @@
 {
-  "title": "Year 10 Electronics: Arduino — Loops & Arrays",
+  "title": "VCE Physics Units 3 & 4 — Examination",
   "creator": "Science Department",
-  "outputFile": "./output/arduino-loops-arrays-workbook.docx",
-  "header": "Year 10 Electronics · Arduino: Loops & Arrays",
-  "contentDir": "./content/arduino-loops-arrays",
+  "outputFile": "./output/vce-physics-u34-exam.docx",
+  "header": "VCE Physics Units 3 & 4 · Examination",
+  "contentDir": "./content/vce-physics-u34-exam",
   "footer": true,
   "landscape": false
 }

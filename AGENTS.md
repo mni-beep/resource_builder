@@ -85,8 +85,11 @@ What format should the resource be?
 
 - [ ] ASCII diagrams only (box-drawing characters, works offline)
 - [ ] Open-source images from subject repositories (see list below)
+- [ ] 📊 Rendered graphs/diagrams (via `tools/render_graph.py` — matplotlib, schemdraw, svgwrite)
 - [ ] Both
 - [ ] None — text and tables only
+
+**If graphs/diagrams are requested:** The project includes `tools/render_graph.py` which can generate publication-quality graphs (line/scatter/bar plots), electrical circuit schematics, and vector diagrams (force diagrams, ray optics). See `DOCX_BUILDER_REFERENCE.md` Section 15 for the full spec API. Rendered images land in `images/` and are embedded via `C.imageFromFile()` (DOCX) or `C.imageSlide()` (PPTX).
 
 **If images are requested**, ask which sources they prefer:
 
@@ -179,13 +182,19 @@ Numbers don't need to be consecutive — leave gaps so sections can be inserted 
 
 | Building | Open this file | Key sections |
 |---|---|---|
-| **DOCX** | [`DOCX_BUILDER_REFERENCE.md`](DOCX_BUILDER_REFERENCE.md) | Section 4 (C helpers), Section 5 (H helpers), Section 7 (template), Section 8 (booklet structure), Section 14 (cheat sheet) |
-| **PPTX** | [`PPTX_BUILDER_REFERENCE.md`](PPTX_BUILDER_REFERENCE.md) | Section 2 (C helpers), Section 3 (H helpers), Section 4 (template), Section 9 (cheat sheet) |
+| **DOCX** | [`DOCX_BUILDER_REFERENCE.md`](DOCX_BUILDER_REFERENCE.md) | Section 4 (C helpers), Section 5 (H helpers), Section 7 (template), Section 8 (booklet structure), Section 14 (cheat sheet), Section 15 (graph rendering) |
+| **PPTX** | [`PPTX_BUILDER_REFERENCE.md`](PPTX_BUILDER_REFERENCE.md) | Section 2 (C helpers), Section 3 (H helpers), Section 4 (template), Section 9 (cheat sheet), Section 10 (graph & diagram embedding) |
 | **E5 PPTX** | Also read [`E5_MODEL_BIBLE.md`](E5_MODEL_BIBLE.md) | Pedagogical reference — mandatory before drafting any E5 slide content |
 
-**Image handling:** If the user requested open-source images, see `DOCX_BUILDER_REFERENCE.md` Section "Image download workflow" and verification loop. If the user requested YouTube videos (PPTX), see the video helpers in `PPTX_BUILDER_REFERENCE.md`.
+**Image handling:** If the user requested open-source images, see `DOCX_BUILDER_REFERENCE.md` Section "Image download workflow" and verification loop. If the user requested graphs or diagrams, see `DOCX_BUILDER_REFERENCE.md` Section 15 (for DOCX) or `PPTX_BUILDER_REFERENCE.md` Section 10 (for PPTX). If the user requested YouTube videos (PPTX), see the video helpers in `PPTX_BUILDER_REFERENCE.md`.
 
 ### Step 4: Run the build
+
+**If graphs/diagrams were requested:** Render them first — create JSON spec files in `content/<resource-name>/graphs/` and run:
+```powershell
+python tools/render_graph.py --spec content/<resource-name>/graphs/q1.json --out images/q1-graph.png
+```
+Repeat for each graph/circuit/diagram. Then build the document:
 
 **For DOCX:**
 ```powershell

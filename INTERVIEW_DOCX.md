@@ -160,6 +160,8 @@ See `DOCX_BUILDER_REFERENCE.md` Section 9 for the full teacher edition patterns.
 | Revision guide | `01-cover.js`, `10-topic1.js`, `20-topic2.js`, `90-formula-sheet.js` |
 | In-class activities | `01-cover.js`, `10-activity1.js`, `20-activity2.js`, `90-teacher-notes.js` |
 
+> **📊 Rendered graphs/diagrams:** If the user requested graphs or diagrams in Question 8, store graph spec JSON files in a `graphs/` subfolder inside the content directory (e.g., `content/my-resource/graphs/photoelectric.json`). Generate images with `python tools/render_graph.py --spec ... --out images/...` BEFORE running `node build.js`. Embed with `C.imageFromFile()`. Full spec API in `DOCX_BUILDER_REFERENCE.md` Section 15.
+
 ---
 
 > **Return to [`AGENTS.md`](AGENTS.md) for the universal Phase 2 build steps (config, run, report) and Rules.**

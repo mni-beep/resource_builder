@@ -146,7 +146,7 @@ Collect these additional details for the worksheet (YES path only):
 |---|---|---|
 | **Engage** | 🎬 Video (preferred) or 🖼️ image | Hooking curiosity — motion and narration work best. Fall back to a striking image if no good video exists. |
 | **Explore** | 🎬 Video (preferred), 🖼️ image, or 🧠 mind map | Investigation — a hands-on demo video or a rich diagram sparks inquiry. A mind-map works for concept-mapping prompts. |
-| **Explain** (core vocab) | 🖼️ Image or 📐 ASCII diagram | Explicit teaching — a labelled diagram or clear illustration supports definitions. Video is too passive here. |
+| **Explain** (core vocab) | 🖼️ Image, 📐 ASCII diagram, or 📊 rendered graph | Explicit teaching — a labelled diagram, clear illustration, or data plot supports definitions. Video is too passive here. |
 | **Explain** (worked example) | 📐 ASCII diagram or none | Step-by-step reasoning — a small monospaced diagram of the circuit keeps focus on the working. |
 | **Explain** (comparison) | 🖼️ Image or 📐 ASCII diagram | Side-by-side visuals help students compare at a glance. |
 | **Elaborate** | None (worksheet-driven) | Students are working on the companion worksheet — no visual needed on the slide. |
@@ -179,6 +179,8 @@ A single `.pptx` file serves as both the student-facing deck AND the teacher edi
 | Revision deck | `01-title.js`, `10-topic1.js`, `10-topic1-questions.js`, `90-summary.js` |
 | Assessment walkthrough | `01-title.js`, `10-section1.js`, `90-wrapup.js` |
 | Lab intro | `01-title.js`, `10-safety.js`, `20-procedure.js`, `90-checklist.js` |
+
+> **📊 Rendered graphs/diagrams:** If the user requested graphs or diagrams in Question 8, store graph spec JSON files in a `graphs/` subfolder inside the content directory (e.g., `content/my-lesson/graphs/iv-curve.json`). Generate images with `python tools/render_graph.py --spec ... --out images/...` BEFORE running `node build-pptx.js`. Embed with `C.imageSlide()`. Full spec API in `DOCX_BUILDER_REFERENCE.md` Section 15; PPTX embedding patterns in `PPTX_BUILDER_REFERENCE.md` Section 11.
 
 ---
 
