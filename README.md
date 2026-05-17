@@ -2,7 +2,7 @@
 
 **Generate scaffolded teaching resources as `.docx` worksheets/booklets AND `.pptx` slide decks — programmatically.**
 
-Describe what you want, answer a few questions, and this tool produces print-ready Word documents and presentation-ready PowerPoint files. No Microsoft Office required to build.
+Describe what you want, answer a few questions, and an AI agent produces print-ready Word documents and presentation-ready PowerPoint files. No Microsoft Office required to build. Backed by 7 modular instruction files that guide agents through interview → content creation → graph rendering → build.
 
 ---
 
@@ -55,8 +55,8 @@ Fill in the form (or type your instructions), copy the generated prompt, and pas
 - **Configurable scaffolding** — Heavy (sentence starters + hidden answers), Moderate (hints + checklists), Light (blank spaces), or Mix
 - **Structured boxes** — Callout boxes, worked examples (green), hint boxes (grey), lesson banners, teacher sign-off, completion checklists
 - **Diagrams** — ASCII diagrams using box-drawing characters (offline-friendly), open-source images from subject repositories (OpenStax, Wikimedia, PhET, NASA, etc.), OR **programmatically rendered graphs/diagrams** via `tools/render_graph.py` (matplotlib for scientific graphs, schemdraw for circuit schematics, svgwrite for vector diagrams)
-- **VCAA exam styling** — Italic scalar variables, native DOCX math equations (`C.mathPara()`, `C.mathFormula()`, `C.mathSubscript()`), clean exam body without decorative colours — compliant with VCE/VCAL typesetting conventions
-- **Teacher editions** — Separate build with green answer boxes, amber teaching notes, marking criteria
+- **VCAA exam styling** — Italic scalar variables, native DOCX math equations (`C.mathPara()`, `C.mathFormula()`, `C.mathSubscript()`), clean exam body without decorative colours. See [`VCAA_STYLING.md`](VCAA_STYLING.md).
+- **Teacher editions** — Separate build with green answer boxes, amber teaching notes, marking criteria, confidential cover page. See [`TEACHER_EDITION.md`](TEACHER_EDITION.md).
 - **Printed resource generator** — Auto-built card sets, jigsaw pieces, recording sheets, peer-review checklists, drawing templates — cut-out ready with dashed borders
 - **Problem set builder** — Topic-organised practice with graduated difficulty (Easy→Hard within sections), worked examples + mirrored "now you try" pairs, and integrated or separate answer key
 - **Word corruption protection** — Dynamic numbering registry eliminates unused abstractNum definitions that caused Word to reject large documents
@@ -69,6 +69,20 @@ Fill in the form (or type your instructions), copy the generated prompt, and pas
 - **🖼️ Open-source images** — Auto-resolved from `content/images/` with figure captions
 - **📊 Rendered graphs & diagrams** — Generate publication-quality scientific graphs, circuit schematics, and vector diagrams from JSON specs using `tools/render_graph.py`. Embed via `C.imageSlide()`. See `PPTX_BUILDER_REFERENCE.md` Section 11.
 - **Companion worksheets** — E5 Elaborate phase can pair with a DOCX worksheet (activities + peer review + answer key)
+
+### Circuit Diagram Engine ⚡
+
+A complete circuit layout system built on schemdraw (v0.22) with 200+ elements across 16 categories:
+
+| Mode | Behaviour |
+|---|---|
+| **Series** (auto-layout) | Just list components — engine builds a proper clockwise rectangular loop. Battery on left, components on right/bottom rails, switch on return. Guaranteed loop closure. |
+| **Parallel** | Branches via `{"branch": [...]}` objects with automatic push/pop node management |
+| **Manual** | Full control with explicit directions per element |
+
+```powershell
+python tools/render_graph.py --spec content/my-resource/graphs/led-circuit.json --out images/led-circuit.svg
+```
 
 ### Image Acquisition
 - **Unified image downloader** — `tools/download_image.py` is the single entrypoint for direct image URLs and page scraping
@@ -93,7 +107,7 @@ python tools/render_graph.py --spec content/my-resource/graphs/iv-curve.json --o
 python tools/render_graph.py --example
 ```
 
-All rendered output uses **VCAA-compliant defaults** (Calibri 11pt, clean black-on-white, italic axis labels for variables, 300 DPI). Full spec API in `DOCX_BUILDER_REFERENCE.md` Section 15 and `PPTX_BUILDER_REFERENCE.md` Section 11.
+All rendered output uses **VCAA-compliant defaults** (Calibri 11pt, clean black-on-white, italic axis labels for variables, 300 DPI). Full spec API in [`GRAPH_RENDERING.md`](GRAPH_RENDERING.md).
 
 ### YouTube Video Pipeline 🎬
 
@@ -126,12 +140,17 @@ If corruption is detected, the build **refuses to continue** with a clear error 
 
 ### For AI Agents
 
-Three instruction files control the workflow:
-- **`AGENTS.md`** — Mandatory interview process (9 questions) + build phases + rules (now includes graph rendering pre-build step)
-- **`DOCX_BUILDER_REFERENCE.md`** — Complete DOCX helper reference (C.* and H.*), **Section 15** covers graph/diagram spec API
-- **`PPTX_BUILDER_REFERENCE.md`** — Complete PPTX helper reference (C.* and H.*), **Section 11** covers graph embedding in slides
-- **`E5_MODEL_BIBLE.md`** — Pedagogical reference for E5 (Engage→Explore→Explain→Elaborate→Evaluate) instructional model
-- **`VCAA Exam Styling`** — Stored in agent memory (`/memories/vcaa-exam-styling.md`): italic math variables, native DOCX equations, clean exam body
+**7 modular instruction files** — each covers one concern:
+
+| File | Covers |
+|---|---|
+| **`AGENTS.md`** | Entry point — mandatory interview (9 questions), subject auto-detect gates, Phase 2 build steps, rules |
+| **`DOCX_BUILDER_REFERENCE.md`** | DOCX helpers (`C.*` and `H.*`), content module template, booklet structure, scaffolding, embedding |
+| **`PPTX_BUILDER_REFERENCE.md`** | PPTX helpers (`C.*` and `H.*`), slide types, E5 model helpers, embedding |
+| **`GRAPH_RENDERING.md`** | Graph/circuit/diagram JSON spec API — matplotlib, schemdraw (200+ elements, 3 layout modes), svgwrite |
+| **`TEACHER_EDITION.md`** | Teacher/answer editions — green answer boxes, amber teaching notes, marking criteria, cover page |
+| **`VCAA_STYLING.md`** | VCAA exam math styling — 6 rules, italic variables, native DOCX equations, clean exam body |
+| **`E5_MODEL_BIBLE.md`** | E5 pedagogy — what good content looks like per phase, failure modes, quality gate |
 
 ### Quick Start
 
@@ -185,6 +204,10 @@ resource_builder/
 ├── AGENTS.md                   ← Agent instructions
 ├── DOCX_BUILDER_REFERENCE.md   ← DOCX technical reference
 ├── PPTX_BUILDER_REFERENCE.md   ← PPTX technical reference
+├── GRAPH_RENDERING.md          ← 🆕 Graph/circuit/diagram spec API (standalone pipeline)
+├── TEACHER_EDITION.md          ← 🆕 Teacher/answer edition patterns
+├── VCAA_STYLING.md             ← 🆕 VCAA exam math styling rules
+├── E5_MODEL_BIBLE.md           ← E5 pedagogy reference
 ├── README.md                   ← This file
 ├── package.json
 └── output/                     ← Generated .docx/.pptx files

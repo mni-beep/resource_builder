@@ -24,71 +24,27 @@
 
 ## Question 4: STRUCTURE (tailor to DOCX resource type)
 
-**For single worksheets:**
-- Theory first then questions, or interleaved? ___________
+> **Agent note:** The questions below are organised by resource type. Only ask the questions for the type the user selected in Q1. If the user can't answer a specific number, use the defaults shown in parentheses.
 
-**For multi-lesson booklets / unit guides:**
-- How many weeks does this span? ___________
-- How many lessons per week? ___________
-- Total number of lessons: ___________ (calculated: weeks × lessons/week)
-- Should it have a cover page? [ ] Yes  [ ] No
-- Should it have a contents page? [ ] Yes  [ ] No
-- Should it have a "How to Use This Workbook" page? [ ] Yes  [ ] No
-- Should it have a reference section (glossary, formula sheet, cheat sheet)? [ ] Yes  [ ] No
+**For ALL DOCX types — ask these two universal questions first:**
+- How many pages do you expect? ___________ (default: let the agent decide based on content)
+- Should it be portrait or landscape? [ ] Portrait (default)  [ ] Landscape (for unit guides, wide tables)
 
-**For booklet + teacher edition (if Question 1 selected that option):**
-- Should the teacher edition include a "How to Teach" guide (pacing, common misconceptions, marking approach)? [ ] Yes  [ ] No
-- Should each question include marking criteria with point breakdowns? [ ] Yes  [ ] No
-- Teacher edition output filename: ___________
+**Then ask ONLY the questions for the chosen type:**
 
-**For unit guide / curriculum map tables:**
-- How many weeks does this span? ___________
-- How many lessons per week? ___________
-- What columns should the table have? (Default: Week | Topic | Content | Activities | Resources & Experiments | Assessment & Homework | Disability Inclusion Adjustment)
-- Should it be landscape or portrait? [ ] Landscape (recommended for 6+ columns)  [ ] Portrait
+| Resource Type | Ask These Questions |
+|---|---|
+| **Single worksheet** | Theory first then questions, or interleaved? |
+| **Multi-lesson booklet** | Weeks spanned, lessons per week. Cover/contents/how-to/reference pages? (default: all yes) |
+| **Booklet + teacher edition** | Same as booklet PLUS: teacher "How to Teach" guide? Marking criteria? Teacher output filename? |
+| **Unit guide** | Weeks spanned, lessons per week. Custom table columns? (default: Week \| Topic \| Content \| Activities \| Resources \| Assessment \| Inclusion) |
+| **Assessment / exam** | Number of sections, total marks, time limit. Per-section question counts (MC, SA, ER). Separate marking key? |
+| **Lab manual** | Number of labs. Procedure + report template for each? Safety notes? |
+| **Revision guide** | Number of topics. Summary or detailed? Glossary/formula sheet/practice questions? |
+| **In-class activities** | Number of activities. Materials list/reflection/teacher instructions/cover page? Activity types? |
+| **Problem set** | Number of sections (default 5). Questions per section (8–12). Difficulty progression. Worked examples + mirrored problems. Answer key format. Cover page? |
 
-**For assessments / exams:**
-- How many sections? ___________
-- Total marks: ___________
-- Time limit (if stated on cover): ___________
-- Question mix per section (can differ between sections):
-  - Section 1: MC ___ Short answer ___ Extended response ___
-  - Section 2: MC ___ Short answer ___ Extended response ___
-  - (etc. for each section)
-- Should there be a separate marking key document? [ ] Yes  [ ] No
-
-**For lab / practical manuals:**
-- How many labs/practicals? ___________
-- Should each have a procedure section AND a report template? [ ] Yes  [ ] No
-- Any safety notes required? ___________
-
-**For revision / study guides:**
-- How many topics to cover? ___________
-- Dense summary or detailed reference? [ ] Summary  [ ] Detailed
-- Should it include a glossary? [ ] Yes  [ ] No
-- Should it include a formula / cheat sheet? [ ] Yes  [ ] No
-- Should it include practice questions? [ ] Yes  [ ] No
-- If yes, how many questions per topic? ___________
-
-**For in-class activities:**
-- How many activities? ___________
-- Should each activity include a materials list? [ ] Yes  [ ] No
-- Should each activity include reflection / exit ticket questions? [ ] Yes  [ ] No
-- Should it include a teacher instructions page (setup, timing, answers)? [ ] Yes  [ ] No
-- Should it have a cover page? [ ] Yes  [ ] No
-- Any specific activity types or themes? ___________ (card sorts, station rotations, group challenges, circuit builders, data collection, design tasks, discussion prompts — leave blank for variety)
-
-**For problem sets:**
-- How many problem sections/sets? ___________ (default 5 — one per topic)
-- How many questions per section total? ___________ (default 8–12)
-- Difficulty progression: [ ] Easy → Hard within each section  [ ] Section-by-section increasing  [ ] Mixed difficulty throughout
-- Include worked examples? [ ] Yes (___ per section, default 2)  [ ] No
-- Include "Now you try" mirrored problems after each worked example? [ ] Yes  [ ] No
-- Answer key: [ ] Integrated — answers at end of document  [ ] Separate answer key document  [ ] No answers (student self-check only)
-- Include reference / formula sheet? [ ] Yes (1 page, front or back)  [ ] No
-- Cover page? [ ] Yes (title + topic list)  [ ] No
-- Student working space: [ ] Minimal — compact layout  [ ] Standard — 3–5 lines per short answer  [ ] Generous — full working lines
-- Include diagram-based problems? [ ] Yes  [ ] No
+> **After collecting the type-specific answers, proceed to Q5 (if applicable) or skip to Q2 in AGENTS.md.**
 
 ---
 

@@ -1,6 +1,6 @@
 # 📄 Programmatic DOCX Teaching Resource Builder — Reference Guide
 
-> **Reverse-engineered from a working Electronics booklet builder.**
+
 > This document describes the complete methodology, architecture, and all available features for generating scaffolded paper-based teaching resources (booklets, worksheets, assessments, lab manuals, reference sheets, revision guides — any printable classroom document) as `.docx` files using the [`docx`](https://www.npmjs.com/package/docx) npm library.
 
 ---
@@ -17,6 +17,42 @@ If you are an AI agent asked to build a teaching resource from this project, her
 4. **Run** `node build.js` to generate the `.docx` output.
 
 Every content module exports `function(C, H) → array`. Use `C.*` for all formatting (headings, paragraphs, callout boxes, questions, scaffolding). Use `H.*` for table cells. See the Cheat Sheet (Section 14) for every function signature.
+
+### 🚨 CRITICAL: Spread array-returning helpers
+
+Some `C.*` helpers return arrays, not single elements. You MUST spread them with `...` when pushing into your content array, or the DOCX will silently corrupt.
+
+| Helper | Usage |
+|---|---|
+| `C.linedAnswerSpace(n)` | `content.push(...C.linedAnswerSpace(3))` |
+| `C.drawingSpace(h, label)` | `content.push(...C.drawingSpace(2, "Label"))` |
+| `C.lessonBanner(n, title, sub)` | `content.push(...C.lessonBanner(1, "Title", "Sub"))` |
+| `C.mcQuestion(n, stem, opts, ref)` | `content.push(...C.mcQuestion(1, "Q?", [...], "mc-q1"))` |
+
+### 🧠 80/20 Cheat Card — covers 90% of content module needs
+
+```js
+module.exports = function myModule(C, H) {
+  return [
+    C.h1("Section Title"),
+    C.h2("Topic"),
+    C.p("Body text."),
+    C.p("Italic text.", { italic: true }),
+    C.bullet("Bullet point."),
+    ...C.mcQuestion(1, "MC stem?", ["A", "B", "C", "D"], "mc-q1"),
+    C.sentenceStarter("The answer is _______________."),
+    ...C.linedAnswerSpace(3),
+    C.scaffoldStep(1, "What is X?", "Optional hint"),
+    C.calloutBox("KEY CONCEPT", [C.p("Important."), C.bullet("Detail.")]),
+    C.workedExample("Title", [C.p("Question..."), C.p("Step 1...")]),
+    C.hintBox("Look at the reference table on the previous page."),
+    ...C.drawingSpace(3.5, "Sketch your diagram:"),
+    C.pageBreak(),
+  ];
+};
+```
+
+> For VCAA science/maths exams: italicise ALL scalar variables, use native DOCX math helpers, and keep the exam body plain (no coloured section tags). See Section 13 D.1.
 
 ---
 
@@ -384,6 +420,225 @@ C.mcQuestion(2, "What is the unit of electrical current?", [
 
 **MC scaffolding principle:** Early questions are deliberately easy. The first question's answer is often directly stated in a hint box or the theory on the same page. Difficulty ramps up through questions 4–6.
 
+### 4.17 Images
+
+```js
+C.imageFromFile("./images/diagram.png", { width: 450, height: 300 })
+// → ImageRun ready to embed in a Paragraph
+// First arg: absolute or relative path to image file
+// Second arg: transformation object { width, height, rotation? }
+// Supported formats: PNG, JPEG, GIF
+// Always wrap in a Paragraph — ImageRun is an inline element.
+
+// Low-level helper (rarely used directly):
+C.image(data, transformation, { type: "png" })
+// → ImageRun from raw buffer data
+```
+
+**Typical usage pattern:**
+```js
+const path = require('path');
+content.push(new Paragraph({
+  alignment: AlignmentType.CENTER,
+  children: [C.imageFromFile(path.join(__dirname, '..', 'images', 'graph.png'), { width: 450, height: 300 })]
+}));
+content.push(new Paragraph({
+  alignment: AlignmentType.CENTER,
+  spacing: { after: 160 },
+  children: [new TextRun({ text: "Figure 1: Caption text", italics: true, size: 18, color: "595959" })]
+}));
+```
+
+### 4.18 Checkboxes
+
+```js
+C.checkbox("Label text", false)
+// → Paragraph containing an interactive checkbox + label
+// First arg: label text
+// Second arg: true = checked, false = unchecked (default)
+// Use for checklists, success criteria, self-assessment forms.
+```
+
+### 4.19 Bookmarks & Cross-References
+
+```js
+C.bookmark("my-bookmark-id", "Visible text")
+// → Bookmark element — anchors a location in the document for cross-referencing.
+
+C.internalLink("Click here", "my-bookmark-id")
+// → InternalHyperlink — clickable link that jumps to a bookmark within the document.
+// Renders as blue underlined text.
+
+C.pageRef("my-bookmark-id")
+// → PageReference — inserts the page number where the bookmark is located.
+// Use for "See page X" references.
+
+C.link("GitHub Copilot", "https://github.com/features/copilot")
+// → ExternalHyperlink — clickable link to an external URL.
+// Renders as blue underlined text.
+```
+
+**Typical usage:**
+```js
+// Place a bookmark on the reference page:
+C.bookmark("ref-formula-sheet", "Formula Sheet"),
+
+// Later, link to it:
+new Paragraph({
+  children: [
+    new TextRun("See the "),
+    C.internalLink("Formula Sheet", "ref-formula-sheet"),
+    new TextRun(" on page "),
+    C.pageRef("ref-formula-sheet"),
+    new TextRun(" for data values.")
+  ]
+}),
+```
+
+### 4.20 Tab Stops
+
+```js
+C.tabStop(TabStopType.RIGHT, 9026)
+// → Creates a right-aligned tab stop at the specified position (DXA).
+// Use inside C.p() opts.tabStops array.
+
+C.dotLeaderTab(9026)
+// → Creates a right-aligned tab stop with a dot leader (······).
+// Classic "Table of Contents" dot-fill style.
+// Use inside C.p() opts.tabStops array.
+```
+
+**Typical usage:**
+```js
+C.p("Topic 1\tp. 3", {
+  tabStops: [C.dotLeaderTab(9026)]
+}),
+```
+
+### 4.21 Math & Equations
+
+Native Word equation objects — proper stacked fractions, radicals, subscripts, and superscripts. These render as real DOCX math zones, not Unicode approximations. **MANDATORY for VCE/VCAL assessments** (see Section 13 D.1).
+
+```js
+C.mathFraction("Gm₁m₂", "r²")
+// → Proper stacked fraction in a DocxMath wrapper.
+// Word renders this as a true fraction bar with numerator over denominator.
+
+C.mathRadical(undefined, "2gh")
+// → Square root: √(2gh)
+// First arg: degree (undefined or null = square root; 3 = cube root)
+// Second arg: expression under the radical
+
+C.mathSubscript("v", "1")
+// → v₁ — native subscript rendering
+
+C.mathSuperscript("m", "2")
+// → m² — native superscript rendering
+```
+
+**`C.mathFormula(parts)` — compound expression builder:**
+
+Parts are an array. Each item is either:
+- `{ type: 'frac', num: 'numerator', den: 'denominator' }` — fraction
+- `{ type: 'sqrt', value: 'expression', degree?: n }` — radical
+- Any string — treated as plain MathRun text (use for +, =, operators)
+
+```js
+C.mathFormula([
+  "F = ",
+  { type: 'frac', num: 'Gm₁m₂', den: 'r²' }
+])
+// → F = Gm₁m₂/r² with proper stacked fraction
+```
+
+**`C.mathPara(elements, opts?)` — mixed text + math paragraph:**
+
+```js
+C.mathPara([
+  "The kinetic energy is ",
+  C.mathFormula(["E_k = ", { type: 'frac', num: '1', den: '2' }, "mv²"]),
+  " where m is mass and v is speed."
+], { fontSize: 22, spacing: { after: 120 } })
+// → Paragraph containing plain text interleaved with Word equation objects.
+// elements: array of strings (plain TextRun) or DocxMath objects
+// opts.fontSize: defaults to 22 (11pt)
+// opts.spacing: paragraph spacing
+```
+
+### 4.22 Comments
+
+```js
+C.comment("This is a margin comment visible in Word's review pane.", { id: 42 })
+// → Returns { comment, id, rangeStart, rangeEnd, reference }
+// The comment object goes into the Document's comments collection (build.js handles this).
+// rangeStart/rangeEnd/reference are placed inside a Paragraph's children to mark the
+//   annotated text range.
+// If id is omitted, a random ID is generated.
+// Use for peer review prompts, teacher feedback placeholders, or grading notes.
+```
+
+### 4.23 Footnotes
+
+```js
+C.footnoteRef(footnoteId)
+// → Inline marker (superscript number) placed inside a Paragraph's children.
+// Links to the footnote text at the bottom of the page.
+
+C.footnote(footnoteId, "Footnote text appears at page bottom.")
+// → Footnote definition — goes into the Document's footnotes collection.
+// Use for citations, clarifications, or supplementary notes.
+```
+
+### 4.24 Multi-Column Layouts
+
+```js
+C.columns(2, { space: 720 })
+// → Returns a section property fragment enabling multi-column layout.
+// First arg: number of columns (2 or 3 supported)
+// opts.space: gutter width in DXA between columns (default 720 = 0.5 inch)
+// Apply by spreading into a section's properties object.
+// Use for glossary pages, comparison layouts, or space-efficient reference sheets.
+```
+
+### 4.25 Page Borders
+
+```js
+C.pageBorder(BorderStyle.SINGLE, "2B579A", 12)
+// → Returns a page border definition for section properties.
+// Applies to ALL pages in the section.
+// Defaults: SINGLE style, primary colour, 12pt width.
+// Use for certificate-style pages, cover sheets, or decorative section dividers.
+```
+
+### 4.26 Table of Contents
+
+```js
+C.toc("Table of Contents", { headingStyleRange: "1-3" })
+// → Inserts a Word Table of Contents field.
+// Auto-populates from Heading 1–4 styles by default.
+// Must be refreshed in Word (right-click → Update Field, or Ctrl+A, F9).
+// opts.hyperlink: true enables clickable TOC entries (default true).
+// opts.headingStyleRange: which heading levels to include (default "1-4").
+```
+
+### 4.27 `C.p()` — Full Options Reference
+
+The `C.p()` helper accepts an `opts` object with these properties:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `spacing.after` | number | 120 | Space after paragraph (DXA) |
+| `spacing.before` | number | 0 | Space before paragraph (DXA) |
+| `alignment` | AlignmentType | `LEFT` | `CENTER`, `RIGHT`, `JUSTIFIED` |
+| `indent` | `{ left, right, firstLine }` | — | Indentation in DXA |
+| `italic` | bool | false | Italic body text |
+| `bold` | bool | false | Bold body text |
+| `color` | string | — | Hex text colour (no #) |
+| `size` | number | 22 | Font size in half-points |
+| `font` | string | "Calibri" | Font family |
+| `pageBreakBefore` | bool | false | Force page break before this paragraph |
+| `tabStops` | array | — | Array of tab stop definitions (from C.tabStop / C.dotLeaderTab) |
+
 ---
 
 ## 5. H — Local Helpers (defined in build script)
@@ -508,6 +763,25 @@ hiddenAnswer([
 - Starts with a "👇 ANSWER (cover this until you've tried):" header
 - Each item is a `[label, answerText]` pair rendered as an italic bullet
 - Place immediately after a "Now You Try" question block
+
+### 5.5 Cell Factory `opts` Parameter
+
+ALL cell factories (`cellH`, `cellP`, `cellPr`, `cellE`, `cellHint`, `cellWE`, `cellWELabel`, `bdCell`, `bdCellRich`) accept an optional final `opts` object with these properties:
+
+| Option | Type | Description |
+|---|---|---|
+| `columnSpan` | number | Merge cells horizontally (e.g., `columnSpan: 2`) |
+| `rowSpan` | number | Merge cells vertically (e.g., `rowSpan: 3`) |
+| `verticalAlign` | VerticalAlignTable | `VerticalAlignTable.CENTER`, `TOP`, or `BOTTOM` |
+| `textDirection` | TextDirection | `TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT` for vertical text |
+
+```js
+// Example: header cell spanning 2 columns, centered vertically
+cellH("Wide Header", 4680, { columnSpan: 2, verticalAlign: VerticalAlignTable.CENTER })
+
+// Example: empty cell spanning 3 rows
+cellE(1200, 3, { rowSpan: 3 })
+```
 
 ---
 
@@ -1055,158 +1329,11 @@ C.calloutBox("✅ CHECKLIST — your sketch must include:", [
 
 ## 9. Teacher Edition Patterns
 
-When building a booklet with a paired teacher edition, these patterns are used in the teacher document. The teacher edition is a separate build (separate `build.js` invocation with different `resource.config.json`, typically pointing at a different content folder like `content/my-booklet-teacher/`).
+> **📝 Teacher editions have their own complete reference.** See [`TEACHER_EDITION.md`](TEACHER_EDITION.md) for the full pattern catalogue — colour palette (TC), answer boxes (green), teaching note boxes (amber), question references, marking criteria, teacher cover page, "How to Teach" guide, and the two-invocation build workflow.
 
-### 9.1 Teacher Colour Palette
+When building a booklet with a paired teacher edition, create a second content folder (e.g., `content/my-booklet-teacher/`) and run `build.js` twice with different configs. Teacher content modules use the patterns documented in `TEACHER_EDITION.md`.
 
-```js
-const TC = {
-  red: "C00000",           // teacher cover headings
-  green: "385723",         // answer text
-  greenBg: "E2EFDA",       // answer box background
-  greenBorder: "70AD47",   // answer box border
-  amber: "BF8F00",         // teaching note heading
-  amberBg: "FFF2CC",       // teaching note background
-  amberBorder: "FFC000",   // teaching note border
-  greyText: "595959"       // question references
-};
-```
-
-### 9.2 Answer Box
-
-Green left-border box with "✓ ANSWER" heading. Body text is green.
-
-```js
-function answerBox(bodyParagraphs) {
-  return new Table({
-    width: { size: 9360, type: WidthType.DXA },
-    columnWidths: [9360],
-    rows: [new TableRow({ children: [new TableCell({
-      borders: {
-        top:    { style: BorderStyle.SINGLE, size: 6,  color: TC.greenBorder },
-        bottom: { style: BorderStyle.SINGLE, size: 6,  color: TC.greenBorder },
-        left:   { style: BorderStyle.SINGLE, size: 18, color: TC.greenBorder },
-        right:  { style: BorderStyle.SINGLE, size: 6,  color: TC.greenBorder },
-      },
-      width: { size: 9360, type: WidthType.DXA },
-      shading: { fill: TC.greenBg, type: ShadingType.CLEAR },
-      margins: { top: 120, bottom: 120, left: 200, right: 200 },
-      children: [
-        new Paragraph({
-          children: [new TextRun({ text: "✓ ANSWER", bold: true, color: TC.green, size: 22 })],
-          spacing: { after: 80 }
-        }),
-        ...bodyParagraphs
-      ]
-    })] })]
-  });
-}
-```
-
-### 9.3 Teaching Note Box
-
-Amber left-border box with "⚠ TEACHING NOTE" heading. Used for pacing advice, common misconceptions, and marking approach notes.
-
-```js
-function teachingNote(bodyParagraphs) {
-  // Same structure as answerBox but with amber colours
-  // Borders: TC.amberBorder, Background: TC.amberBg, Heading: TC.amber
-}
-```
-
-### 9.4 Question Reference
-
-Italic grey text linking teacher answers back to student questions:
-
-```js
-function qRef(text) {
-  return new Paragraph({
-    children: [new TextRun({ text, italics: true, color: TC.greyText, size: 20 })],
-    spacing: { before: 200, after: 80 }
-  });
-}
-// Usage: qRef("Q1: Best example of an INPUT")
-```
-
-### 9.5 Answer Paragraphs and Bullets
-
-Green text for all answer content:
-
-```js
-function aPara(text) {
-  return new Paragraph({
-    children: [new TextRun({ text, color: TC.green, size: 22 })],
-    spacing: { after: 60 }
-  });
-}
-function aBullet(text) {
-  return new Paragraph({
-    children: [
-      new TextRun({ text: "• ", color: TC.green, bold: true }),
-      new TextRun({ text, color: TC.green })
-    ],
-    spacing: { after: 40 }, indent: { left: 240 }
-  });
-}
-```
-
-### 9.6 Marking Criteria
-
-For extended response questions, include a marking criteria breakdown inside a teaching note:
-
-```js
-teachingNote([
-  new Paragraph({ children: [
-    new TextRun({ text: "MARKING CRITERIA (out of 6):", bold: true, size: 22 })
-  ] }),
-  new Paragraph({ children: [
-    new TextRun({ text: "• 1 mark — States the circuit is incomplete / not a closed loop", size: 22 })
-  ], spacing: { after: 40 } }),
-  new Paragraph({ children: [
-    new TextRun({ text: "• 1 mark — Recognises voltage IS present at the LED", size: 22 })
-  ], spacing: { after: 40 } }),
-  // ... more criteria ...
-]),
-```
-
-### 9.7 Teacher Cover Page
-
-Red "TEACHER COPY — CONFIDENTIAL" cover:
-
-```js
-function teacherCover() {
-  return [
-    new Paragraph({
-      children: [new TextRun({ text: "TEACHER COPY", bold: true, size: 56, color: TC.red })],
-      alignment: AlignmentType.CENTER, spacing: { before: 1800 }
-    }),
-    new Paragraph({
-      children: [new TextRun({ text: "CONFIDENTIAL", bold: true, size: 36, color: TC.red })],
-      alignment: AlignmentType.CENTER, spacing: { after: 600 }
-    }),
-    // ... course title, week, description ...
-    // Red-bordered usage notice box
-  ];
-}
-```
-
-### 9.8 "How to Teach" Guide
-
-Structured page with:
-- **Pacing** — time estimates per lesson
-- **Common Misconceptions** — bulleted list of pitfalls
-- **Marking Approach** — how to score each question type
-
-### 9.9 common.js Additions for Teacher Edition
-
-`common.js` should export these additional functions:
-
-```
-teacherHeader(text)    → Header object (red-themed or standard)
-teacherFooter()        → Footer object (same as studentFooter usually)
-```
-
-Teachers use the same `C.studentHeader()`/`C.studentFooter()` or these teacher-specific variants depending on design choice. The teacher edition typically reuses most `C.*` helpers, adding the TC colour palette and answer/note boxes locally in its build script.
+`common.js` already exports `teacherHeader(text)` and `teacherFooter()` for teacher-themed headers/footers.
 
 ---
 
@@ -1407,89 +1534,7 @@ All resource types use the same `build.js`. Only `resource.config.json` and `con
 - Content: `01-cover-sheet.js`, `10-section-a.js`, `20-section-b.js`, `90-marking-key.js`
 - For a separate marking key document: update `outputFile` and rebuild with answer-filled cells. For an integrated marking key (answers at the back of the same document), include `90-marking-key.js` in the same content folder.
 
-#### D.1 VCAA Exam Math Styling (MANDATORY for VCE/VCAL assessments)
-
-All VCE Physics (and other science/maths) exam papers must follow VCAA typesetting conventions. These rules apply to **every** assessment resource generated by this project.
-
-**Rule 1 — Italic scalar variables:** All algebraic scalar variables MUST be rendered in italic. Use `new TextRun({ text: "v", italics: true })` for inline variables within question stems and answer options.
-
-```js
-// WRONG — plain variable:
-new TextRun("v = 3.0 × 10⁶ m s⁻¹")
-// RIGHT — italic variable:
-new TextRun({ text: "v", italics: true }),
-new TextRun(" = 3.0 × 10⁶ m s⁻¹")
-```
-
-**Rule 2 — Native DOCX math for equations:** Use `C.mathPara()` for paragraphs containing equations, and `C.mathFormula()` for proper fractions, radicals, subscripts, and superscripts. NEVER use Unicode-only superscripts/subscripts as the primary equation rendering — they are acceptable only in inline running text where DOCX math would be excessive.
-
-```js
-// WRONG — Unicode approximation:
-C.p("F = Gm₁m₂/r²")
-// RIGHT — proper math fraction:
-C.mathPara(["F = ", C.mathFormula([{ type: 'frac', num: 'Gm₁m₂', den: 'r²' }])])
-```
-
-**Rule 3 — Subscripts and superscripts:** Use `C.mathSubscript("v", "1")` and `C.mathSuperscript("m", "2")` for individual subscripted/superscripted variables. Use `C.mathFormula()` for compound expressions.
-
-```js
-// Inline subscripted variable:
-C.mathPara([C.mathSubscript("v", "1"), " = 0 m s⁻¹"])
-// Compound expression with fraction + subscript:
-C.mathFormula([
-  C.mathSubscript("v", "avg"),
-  " = ",
-  { type: 'frac', num: 'Δx', den: 'Δt' }
-])
-```
-
-**Rule 4 — Clean exam body, no decorative colours:** The exam question body should use plain black text on white. Do NOT use `C.sectionTag()` with coloured bars, `C.calloutBox()`, or `C.hintBox()` in the question sections. These are for workbooks/booklets only. The cover page may use colour. The marking key may use green answer boxes (teacher edition pattern).
-
-```js
-// EXAM BODY — use plain headings, no colour:
-C.h2("Question 1 — Projectile Motion [6 marks]")
-// NOT:
-C.sectionTag("Unit 3 · Area of Study 1: Motion", C.COLOURS.primary)  // ← remove from exam body
-```
-
-**Rule 5 — MC option variables in italic:** When multiple-choice options contain algebraic variables, those variables must be italic. Build custom option paragraphs instead of relying on `C.mcQuestion()` plain-text options when the options contain maths.
-
-```js
-// For MC options with algebraic variables, use custom paragraphs:
-const mcOptsWithItalic = (n, stem, opts, ref) => {
-  const items = [
-    new Paragraph({ spacing: { before: 160, after: 80 }, children: [
-      new TextRun({ text: `${n}. `, bold: true }), new TextRun(stem)
-    ]})
-  ];
-  opts.forEach((optParts, i) => {
-    // optParts is an array of { text, italics? } objects
-    items.push(new Paragraph({
-      numbering: { reference: ref, level: 0 },
-      spacing: { after: 40 },
-      children: optParts.map(p => new TextRun({ text: p.text, italics: p.italics || false }))
-    }));
-  });
-  return items;
-};
-```
-
-**Rule 6 — Vector notation:** Vectors may be rendered in bold (VCAA convention). Use `new TextRun({ text: "F", bold: true })` for vector variables where appropriate. The VCAA study design uses bold for vectors in some contexts.
-
-**Quick summary table:**
-
-| Element | VCAA Style | Helper to use |
-|---|---|---|
-| Scalar variable (v, m, t, E) | *italic* | `new TextRun({ text: "v", italics: true })` |
-| Subscript (v₁) | native subscript | `C.mathSubscript("v", "1")` |
-| Superscript (m²) | native superscript | `C.mathSuperscript("m", "2")` |
-| Fraction (Gm/r²) | stacked fraction | `C.mathFormula([{ type: 'frac', num: 'Gm', den: 'r²' }])` |
-| Display equation | mixed text + math | `C.mathPara([...elements])` |
-| Square root | radical symbol | `C.mathFormula([{ type: 'sqrt', value: '2gh' }])` |
-| Vector | **bold** | `new TextRun({ text: "F", bold: true })` |
-| Unit (m s⁻¹, N kg⁻¹) | regular weight | `new TextRun(" m s⁻¹")` — Unicode superscript OK for units |
-| Section divider | plain heading | `C.h2()` or `C.h3()` — no coloured `C.sectionTag()` |
-| Exam instructions | plain paragraph | `C.p()` — no callout boxes in exam body |
+> **🎓 VCAA Exam Math Styling:** For VCE/VCAL science/maths assessments, mandatory VCAA typesetting rules apply — italic scalar variables, native DOCX math, clean exam body. See [`VCAA_STYLING.md`](VCAA_STYLING.md) for the complete 6-rule reference with code examples and the quick summary table. The auto-detect gate in `AGENTS.md` triggers this automatically when the subject is Physics, Chemistry, Biology, Science, or Maths.
 
 ### E. Lab / Practical Manual
 - Config: `"landscape": false`
@@ -1536,7 +1581,7 @@ C.h4("text")
 
 // Body
 C.p("text")
-C.p("text", { spacing: { after: 200 }, italic: true })
+C.p("text", { spacing: { after: 200 }, italic: true, bold: true, color: "595959", alignment: AlignmentType.CENTER, indent: { left: 240 }, pageBreakBefore: true, tabStops: [...] })
 C.bullet("text")
 C.bulletRich([new TextRun({ text: "bold", bold: true }), new TextRun(" normal")])
 
@@ -1558,6 +1603,78 @@ C.drawingSpace(3.5, "Label:")
 
 // Questions
 C.mcQuestion(n, "stem?", ["A", "B", "C", "D"], "mc-ref")
+
+// Images
+C.imageFromFile("./images/graph.png", { width: 450, height: 300 })
+
+// Checkboxes
+C.checkbox("Label text", false)
+
+// Bookmarks & Links
+C.bookmark("id", "visible text")          // anchor point
+C.internalLink("Click here", "bookmark-id") // jump to bookmark
+C.pageRef("bookmark-id")                    // "see page X"
+C.link("Link text", "https://example.com") // external URL
+
+// Tab Stops (use inside C.p() opts.tabStops)
+C.tabStop(TabStopType.RIGHT, 9026)
+C.dotLeaderTab(9026)                        // with dot leader (······)
+
+// Math & Equations (native DOCX math zones)
+C.mathFraction("num", "den")               // stacked fraction
+C.mathRadical(degree, "expression")         // √ or ∛
+C.mathSubscript("base", "sub")             // v₁
+C.mathSuperscript("base", "sup")           // m²
+C.mathFormula([...parts])                  // compound expression
+C.mathPara([...elements], opts?)           // mixed text + math paragraph
+
+// Comments & Footnotes
+C.comment("text", { id? })                 // returns {comment, rangeStart, rangeEnd, reference}
+C.footnoteRef(id)                           // inline superscript marker
+C.footnote(id, "text")                      // footnote definition
+
+// Layout
+C.columns(2, { space: 720 })                // multi-column section
+C.pageBorder(BorderStyle.SINGLE, "2B579A", 12)  // decorative page border
+
+// Table of Contents
+C.toc("Table of Contents", { headingStyleRange: "1-3" })
+
+// Images
+C.imageFromFile("./images/graph.png", { width: 450, height: 300 })
+
+// Checkboxes
+C.checkbox("Label text", false)
+
+// Bookmarks & Links
+C.bookmark("id", "visible text")
+C.internalLink("Click here", "bookmark-id")
+C.pageRef("bookmark-id")
+C.link("Link text", "https://example.com")
+
+// Tab Stops (use inside C.p() opts.tabStops)
+C.tabStop(TabStopType.RIGHT, 9026)
+C.dotLeaderTab(9026)
+
+// Math & Equations (native DOCX math zones)
+C.mathFraction("num", "den")
+C.mathRadical(degree, "expression")
+C.mathSubscript("base", "sub")
+C.mathSuperscript("base", "sup")
+C.mathFormula([...parts])        // compound expression builder
+C.mathPara([...elements], opts?)  // mixed text + math paragraph
+
+// Comments & Footnotes
+C.comment("text", { id? })
+C.footnoteRef(id)
+C.footnote(id, "text")
+
+// Layout
+C.columns(2, { space: 720 })
+C.pageBorder(BorderStyle.SINGLE, "2B579A", 12)
+
+// Table of Contents
+C.toc("Table of Contents", { headingStyleRange: "1-3" })
 
 // Config
 C.COLOURS.primary
@@ -1659,41 +1776,110 @@ numberingConfig  docx numbering config
 a4PageProps      { pageSize, margins } (portrait A4)
 a4LandscapeProps { pageSize, margins } (landscape A4)
 
-studentHeader(text)    → header object (student-themed)
-studentFooter()        → footer object with page numbers
-teacherHeader(text)    → header object (teacher-themed, for answer booklets)
-teacherFooter()        → footer object (same as studentFooter typically)
+studentHeader(text)     → Header object (student-themed)
+studentFooter(opts?)    → Footer object with page numbers (opts.totalPages for "Page X of Y")
+teacherHeader(text)     → Header object (teacher-themed, for answer booklets)
+teacherFooter()         → Footer object (same as studentFooter typically)
 
-pageBreak()            → PageBreak element
+pageBreak()             → PageBreak element
 
-h1(text)               → Paragraph
-h2(text)               → Paragraph
-h3(text)               → Paragraph
-h4(text)               → Paragraph
+h1(text)                → Paragraph
+h2(text)                → Paragraph
+h3(text)                → Paragraph
+h4(text)                → Paragraph
 
-p(text, opts?)         → Paragraph
-bullet(text)           → Paragraph
-bulletRich(textRuns[]) → Paragraph
+p(text, opts?)          → Paragraph
+bullet(text)            → Paragraph
+bulletRich(textRuns[])  → Paragraph
 
-lessonBanner(num, title, subtitle)  → [Paragraph, ...]
-sectionTag(title, colour?)          → Paragraph
-calloutBox(title, children[], colour?) → [Paragraph, ...]
-workedExample(title, children[])    → [Paragraph, ...]
-hintBox(text)                       → Paragraph
-sentenceStarter(text)               → Paragraph
-scaffoldStep(n, prompt, hint?)      → Paragraph
-linedAnswerSpace(count)             → Paragraph[]
-drawingSpace(heightInches, label?)  → [Paragraph, ...]
-mcQuestion(n, stem, options[], ref) → [Paragraph, ...]
+lessonBanner(num, title, subtitle)    → [Paragraph, ...]
+sectionTag(title, colour?)            → Paragraph
+calloutBox(title, children[], colour?) → Table
+workedExample(title, children[])      → Table
+hintBox(text)                         → Paragraph
+sentenceStarter(text)                 → Paragraph
+scaffoldStep(n, prompt, hint?)        → Paragraph
+linedAnswerSpace(count)               → Paragraph[]
+drawingSpace(heightInches, label?)    → [Paragraph, Table]
+mcQuestion(n, stem, options[], ref)   → [Paragraph, ...]
+registerMcRef(ref)                    → void (internal)
+finalizeNumbering()                   → void (internal)
+
+// ── Images ──
+image(data, transformation, opts?)    → ImageRun
+imageFromFile(filePath, transformation, opts?) → ImageRun
+
+// ── Checkboxes ──
+checkbox(text, checked?)              → Paragraph
+
+// ── Bookmarks & Links ──
+bookmark(id, text)                    → Bookmark
+pageRef(bookmarkId)                   → PageReference
+internalLink(text, bookmarkId)        → InternalHyperlink
+link(text, url)                       → ExternalHyperlink
+
+// ── Tab Stops ──
+tabStop(type?, position?)             → TabStopDefinition
+dotLeaderTab(position?)               → TabStopDefinition (with dot leader)
+
+// ── Math & Equations ──
+mathFraction(num, den)                → DocxMath
+mathRadical(degree?, expression)      → DocxMath
+mathSubscript(base, sub)              → DocxMath
+mathSuperscript(base, sup)            → DocxMath
+mathFormula(parts[])                  → DocxMath
+mathPara(elements[], opts?)            → Paragraph
+
+// ── Comments & Footnotes ──
+comment(text, opts?)                  → { comment, id, rangeStart, rangeEnd, reference }
+footnoteRef(id)                       → FootnoteReferenceRun
+footnote(id, text)                    → Footnote
+
+// ── Layout ──
+columns(count, opts?)                 → Section column property
+pageBorder(style?, color?, size?)     → Page border definition
+
+// ── Table of Contents ──
+toc(title?, opts?)                    → TableOfContents
 ```
 
 ---
 
-## 15. Graph & Diagram Rendering (`tools/render_graph.py`)
+## 15. Graph & Diagram Embedding
 
-A Python CLI tool for generating publication-quality graphs, circuit diagrams, and vector illustrations for embedding in DOCX and PPTX resources. Uses `matplotlib` (headless Agg backend), `schemdraw`, and `svgwrite`.
+> **📊 Image generation is handled by a separate pipeline.** See [`GRAPH_RENDERING.md`](GRAPH_RENDERING.md) for the complete spec API — graph JSON format, circuit layout modes (series/parallel/manual), element catalog, VCAA compliance defaults, and the `tools/render_graph.py` CLI.
 
-### 15.1 Quick Start
+### Workflow
+
+```powershell
+# 1. Render the image FIRST (see GRAPH_RENDERING.md for spec format)
+python tools/render_graph.py --spec content/my-resource/graphs/q1.json --out images/q1-graph.png
+
+# 2. Embed in your content module
+# 3. Run the build
+node build.js
+```
+
+### Embedding in DOCX
+
+```js
+const graphPath = path.join(__dirname, '..', '..', 'images', 'q13-photoelectric.png');
+
+content.push(new Paragraph({
+  alignment: AlignmentType.CENTER,
+  children: [C.imageFromFile(graphPath, { width: 450, height: 300 })]
+}));
+content.push(new Paragraph({
+  alignment: AlignmentType.CENTER,
+  spacing: { after: 160 },
+  children: [new TextRun({ text: "Figure 1: Caption", italics: true, size: 18, color: "595959" })]
+}));
+```
+
+---
+
+> **End of Reference.** Use this document as the single source of truth for building any `.docx` teaching resource using this methodology.
+
 
 ```powershell
 python tools/render_graph.py --spec content/my-resource/graphs/q1.json --out images/q1-graph.png
@@ -1768,25 +1954,175 @@ python tools/render_graph.py --spec content/my-resource/graphs/q1.json --out ima
 
 ### 15.4 Circuit Spec (`"type": "circuit"`)
 
+Circuit schematics are rendered via **schemdraw** (v0.22). Schemdraw traces a **path** — each element extends from the endpoint of the previous one. To form a closed circuit, the path must return to its starting point.
+
+Three layout modes are supported:
+
+| `"layout"` | Behaviour | Use when |
+|---|---|---|
+| `"series"` (default) | **Auto-layout.** Battery on left rail (UP), top wire RIGHT, components on right rail (DOWN), switch on bottom return (LEFT), close back to battery. Just list components; engine builds the rectangle. | Simple series circuits — 90% of teaching resources |
+| `"parallel"` | **Branches via push/pop.** Main loop as series, with `{"branch": [...]}` sub-arrays for parallel paths. | Circuits with parallel components, ammeters/voltmeters in branches |
+| `"manual"` | **Explicit directions per element.** User responsible for correctness. | Complex topologies the auto-layout can't handle |
+
+#### 15.4.1 Auto-Layout Series (`"layout": "series"`)
+
+The engine automatically builds a clockwise rectangular loop. Just list the components:
+
 ```json
 {
   "type": "circuit",
-  "width": 6, "height": 4,
+  "layout": "series",
   "elements": [
-    {"element": "battery", "direction": "up", "label": "9V"},
-    {"element": "line", "direction": "right"},
-    {"element": "resistor", "direction": "down", "label": "R₁ = 10kΩ"},
-    {"element": "line", "direction": "right"},
-    {"element": "led", "direction": "down", "label": "LED"},
-    {"element": "line", "direction": "left"},
-    {"element": "switch", "direction": "down", "label": "SW1"}
+    {"element": "battery", "label": "9V"},
+    {"element": "resistor", "label": "R₁ = 10kΩ"},
+    {"element": "led", "label": "LED"},
+    {"element": "switch", "label": "SW1"}
   ]
 }
 ```
 
-**Available elements:** `resistor`, `capacitor`, `inductor`, `diode`, `zener`, `led`, `battery`, `battery_cell`, `source_v`, `source_sin`, `ground`, `line`, `wire`, `dot`, `switch`, `switch_spdt`, `meter_v`, `meter_a`, `fuse`, `lamp`, `motor`, `speaker`, `antenna`, `transformer`, `potentiometer`, `thermistor`, `photoresistor`/`ldr`, `photodiode`, `npn`, `pnp`, `opamp`, `button`, `solar`, `crystal`, `relay`.
+**What the engine does:**
+1. Battery goes **UP** on the left rail (positive terminal at top, per convention)
+2. Wire goes **RIGHT** across the top rail
+3. First half of components go **DOWN** on the right rail
+4. Wire goes **LEFT** across the bottom return
+5. Remaining components + switch go on the bottom return rail
+6. Final wire closes back to battery
 
-**Directions:** `"right"`, `"left"`, `"up"`, `"down"` (or shorthand `"r"`, `"l"`, `"u"`, `"d"`).
+**Rules the engine enforces:**
+| Rule | Description |
+|---|---|
+| **R1 — Loop closure** | Net displacement is guaranteed (0,0) — the circuit always closes |
+| **R2 — Battery position** | Always on left rail, positive UP (conventional current clockwise) |
+| **R3 — Switch placement** | Always on the bottom return rail (conventional position) |
+| **R4 — Component distribution** | Components evenly split between right rail (DOWN) and bottom rail (LEFT) |
+| **R5 — Ground handling** | If a `"ground"` element is present, the circuit terminates at ground (no loop closure needed — valid open circuit) |
+
+**What goes where (distribution logic):**
+
+| Element type | Where it goes |
+|---|---|
+| `battery`, `battery_cell`, `source_v`, `source_sin`, `source_i` | Left rail, UP |
+| `resistor`, `capacitor`, `inductor`, `diode`, `zener`, `led`, `lamp`, `motor`, `fuse`, `thermistor`, `photoresistor`, `speaker`, `solar`, `relay` | Right rail (first half) or bottom rail (second half) |
+| `switch`, `switch_spdt`, `switch_dpdt`, `button` | **Always** bottom return rail |
+| `ground`, `ground_signal`, `ground_chassis` | End of circuit — terminates path |
+
+#### 15.4.2 Parallel Branches (`"layout": "parallel"`)
+
+For circuits with parallel components, use `{"branch": [...]}` objects:
+
+```json
+{
+  "type": "circuit",
+  "layout": "parallel",
+  "elements": [
+    {"element": "battery", "label": "9V"},
+    {"branch": [
+      {"element": "resistor", "direction": "right", "label": "R₁ = 10kΩ"},
+      {"element": "led", "direction": "right", "label": "LED1"}
+    ]},
+    {"branch": [
+      {"element": "resistor", "direction": "right", "label": "R₂ = 22kΩ"},
+      {"element": "led", "direction": "right", "label": "LED2"}
+    ]},
+    {"element": "switch", "label": "SW1"}
+  ]
+}
+```
+
+Each branch saves the current drawing position with `push()`, draws its components, then restores with `pop()` so the next branch starts from the same node.
+
+> **⚠️ Branch constraint:** All elements within a branch must end at the same endpoint for proper rejoin. Use equal-length components or adjust with `.length()`.
+
+#### 15.4.3 Manual Mode (`"layout": "manual"`)
+
+For complex topologies beyond auto-layout. You specify explicit `"direction"` per element:
+
+```json
+{
+  "type": "circuit",
+  "layout": "manual",
+  "elements": [
+    {"element": "battery", "direction": "up", "label": "9V"},
+    {"element": "line", "direction": "right"},
+    {"element": "resistor", "direction": "down", "label": "R₁ = 10kΩ"},
+    {"element": "line", "direction": "left"},
+    {"element": "led", "direction": "down", "label": "LED"},
+    {"element": "line", "direction": "right"},
+    {"element": "switch", "direction": "down", "label": "SW1"},
+    {"element": "line", "direction": "left"}
+  ]
+}
+```
+
+> **⚠️ Manual validation:** In manual mode, YOU are responsible for loop closure. Trace your directions on paper: do they return to (0,0)?
+
+#### 15.4.4 Key schemdraw Features Used
+
+| Feature | What it does | Used in |
+|---|---|---|
+| `.up()`, `.down()`, `.left()`, `.right()` | Set element direction AND where next element starts | All modes |
+| `.tox(target_anchor)` | Extend element horizontally to match target's x-coordinate | Loop closure in auto-layout |
+| `.toy(target_anchor)` | Extend element vertically to match target's y-coordinate | Loop closure |
+| `.at(anchor)` | Place element at a specific anchor of another element | Parallel mode, manual |
+| `.anchor(name)` | Align element's named anchor with current position | Alignment |
+| `.push()` / `.pop()` | Save/restore drawing position for branches | Parallel mode |
+| `.dot()` / `.idot()` | Junction dot at end/start of element | All modes |
+| `.length(n)` | Set exact length for a two-terminal element | Custom sizing |
+| `.label(text, loc)` | Add label at specified location | All modes |
+| `.reverse()` | Reverse element direction (e.g., LED polarity) | All modes |
+| `Wire('|-')`, `Wire('n')`, `Wire('c')` | Auto-routed connecting wires between anchors | Manual mode |
+| `Line(arrow='->')` | Arrowhead on wire (current direction indicator) | Manual mode |
+| `Switch(action='open')` | Draw switch in open position | All modes |
+
+#### 15.4.5 Element Parameter Reference
+
+Many elements accept parameters for visual customization:
+
+```json
+{"element": "capacitor", "polar": true, "label": "10μF"}
+{"element": "led", "fill": "red", "label": "LED"}
+{"element": "diode", "fill": true, "label": "D1"}
+{"element": "switch", "action": "close", "label": "SW1"}
+{"element": "inductor", "core": true, "label": "L1"}
+{"element": "resistor", "style": "iec", "label": "R1"}
+```
+
+| Parameter | Applies to | Values | Effect |
+|---|---|---|---|
+| `polar` | Capacitor, Capacitor2 | `true`/`false` | Polarized capacitor symbol |
+| `fill` | Diode, LED, Zener, Schottky, SCR, Triac | `true`/`"red"`/`"green"` etc. | Fill the diode body |
+| `action` | Switch, SwitchSpdt | `"open"`, `"close"` | Switch position |
+| `nc` | Switch, Button | `true`/`false` | Normally-closed switch |
+| `core` | Inductor | `true`/`false` | Show magnetic core |
+| `circle` | BjtNpn, BjtPnp, JFetN, JFetP, NMos, PMos | `true`/`false` | Enclose transistor in circle |
+| `t1`, `t2` | Transformer | `int` or `tuple` | Turns on primary/secondary |
+| `loop` | Transformer | `true`/`false` | Loop core vs straight core |
+
+#### 15.4.6 Complete Element Catalog
+
+All elements available in schemdraw v0.22:
+
+| Category | Elements |
+|---|---|
+| **Passives** | `resistor`, `resistor_var`, `capacitor`, `capacitor2`, `capacitor_var`, `inductor`, `inductor2`, `fuse`, `thermistor`, `photoresistor`, `ldr`, `memristor`, `crystal`, `cpe` |
+| **Semiconductors** | `diode`, `zener`, `led`, `led2`, `schottky`, `diode_tunnel`, `diode_shockley`, `diode_tvs`, `varactor`, `diac`, `triac`, `scr`, `photodiode`, `neon` |
+| **Sources** | `battery`, `battery_cell`, `battery_double`, `source_v`, `source_i`, `source_sin`, `source_pulse`, `source_square`, `source_triangle`, `source_ramp`, `source_controlled`, `source_controlled_i`, `source_controlled_v`, `solar` |
+| **Switches** | `switch`, `switch_spdt`, `switch_spdt2`, `switch_dpst`, `switch_dpdt`, `switch_reed`, `switch_rotary`, `switch_dip`, `button`, `breaker` |
+| **Meters** | `meter_v`, `meter_a`, `meter_i`, `meter_ohm`, `meter_analog`, `meter_digital`, `meter_arrow`, `oscilloscope` |
+| **Transistors** | `bjt_npn`, `bjt_pnp`, `bjt_npn2`, `bjt_pnp2`, `nfet`, `pfet`, `nfet2`, `pfet2`, `jfet`, `jfet_n`, `jfet_p`, `jfet_n2`, `jfet_p2`, `nmos`, `pmos`, `nmos2`, `pmos2`, `npn_schottky`, `pnp_schottky`, `igbt_n`, `igbt_p`, `npn_photo`, `pnp_photo`, `hemt` |
+| **Opamps & ICs** | `opamp`, `ic`, `ic_dip`, `ic_555`, `ic_pin`, `multiplexer`, `seven_segment`, `voltage_regulator` |
+| **Connectors** | `line`, `wire`, `dot`, `dotdotdot`, `arrow`, `arrowhead`, `gap`, `jumper`, `terminal`, `header`, `plug`, `jack` |
+| **Ground/Power** | `ground`, `ground_signal`, `ground_chassis`, `vss`, `vdd` |
+| **Audio** | `speaker`, `mic`, `audio_jack` |
+| **Transformers** | `transformer` |
+| **Motors/Actuators** | `motor`, `lamp`, `lamp2`, `relay` |
+| **RF** | `antenna`, `antenna_loop`, `antenna_loop2`, `coax`, `triax`, `spark_gap` |
+| **Vacuum tubes** | `vacuum_tube`, `tube_diode`, `triode`, `tetrode`, `pentode`, `nixie_tube` |
+| **Compound** | `optocoupler`, `rectifier`, `wheatstone`, `current_mirror`, `voltage_mirror` |
+| **Flowchart** | `box`, `ellipse`, `diamond`, `parallelogram`, `container`, `connect` |
+
+> **Note:** All element names in the JSON spec use **underscore_case** (matching Python class names in schemdraw). The renderer automatically resolves aliases like `ldr` → `photoresistor`, `buzzer` → `speaker`.
 
 ### 15.5 Diagram Spec (`"type": "diagram"`)
 

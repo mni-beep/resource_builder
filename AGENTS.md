@@ -42,6 +42,18 @@ What format should the resource be?
 > **If DOCX:** Use `build.js`, reference `DOCX_BUILDER_REFERENCE.md`, content modules return arrays of docx elements.
 > **If PPTX:** Use `build-pptx.js`, reference `PPTX_BUILDER_REFERENCE.md`, content modules return arrays of slide definition objects. Answers and teaching notes go into **speaker notes** (not separate teacher edition files).
 
+#### 🧪 Auto-Detect: Subject-Based Styling Gates
+
+After Q2 (Subject), check the subject area. The following gates auto-apply and MUST be followed:
+
+| Subject contains… | Gate | Mandatory action |
+|---|---|---|
+| Physics, Chemistry, Biology, Science, Maths, Mathematics | **VCE/VCAA Exam Styling** | See [`VCAA_STYLING.md`](VCAA_STYLING.md) — mandatory italic variables, native DOCX math, clean exam body. |
+| Electronics, Computing, Arduino | **Circuit diagrams** | Use `tools/render_graph.py` with schemdraw for circuit schematics. ASCII box-drawing diagrams are also acceptable for simple circuits. |
+| Any | **General** | If the subject wasn't matched above, no special gate applies. Build normally. |
+
+> **💡 Why this matters:** Agents frequently miss VCAA styling requirements for science exams — using plain non-italic variables like `v = 3.0` instead of *v* = 3.0, and adding coloured section tags in the exam body. This gate prevents that by making the requirement front-and-centre as soon as the subject is known.
+
 ---
 
 ### Question 1: RESOURCE TYPE + Q4–Q6 (branches by format)
@@ -89,7 +101,7 @@ What format should the resource be?
 - [ ] Both
 - [ ] None — text and tables only
 
-**If graphs/diagrams are requested:** The project includes `tools/render_graph.py` which can generate publication-quality graphs (line/scatter/bar plots), electrical circuit schematics, and vector diagrams (force diagrams, ray optics). See `DOCX_BUILDER_REFERENCE.md` Section 15 for the full spec API. Rendered images land in `images/` and are embedded via `C.imageFromFile()` (DOCX) or `C.imageSlide()` (PPTX).
+**If graphs/diagrams are requested:** The project includes `tools/render_graph.py` which can generate publication-quality graphs (line/scatter/bar plots), electrical circuit schematics, and vector diagrams (force diagrams, ray optics). See [`GRAPH_RENDERING.md`](GRAPH_RENDERING.md) for the full spec API. Rendered images land in `images/` and are embedded via `C.imageFromFile()` (DOCX) or `C.imageSlide()` (PPTX).
 
 **If images are requested**, ask which sources they prefer:
 
@@ -174,7 +186,7 @@ Create a new subfolder under `content/` for this resource. Name it after the res
 
 Numbers don't need to be consecutive — leave gaps so sections can be inserted later.
 
-**If building a teacher edition**, create a second subfolder and run `build.js` twice with different configs. Teacher content modules use answer boxes (green), teaching notes (amber), and marking criteria — see `DOCX_BUILDER_REFERENCE.md` Section 9.
+**If building a teacher edition**, create a second subfolder and run `build.js` twice with different configs. Teacher content modules use answer boxes (green), teaching notes (amber), and marking criteria — see [`TEACHER_EDITION.md`](TEACHER_EDITION.md).
 
 ### Step 3: Write each content module
 
@@ -182,13 +194,25 @@ Numbers don't need to be consecutive — leave gaps so sections can be inserted 
 
 | Building | Open this file | Key sections |
 |---|---|---|
-| **DOCX** | [`DOCX_BUILDER_REFERENCE.md`](DOCX_BUILDER_REFERENCE.md) | Section 4 (C helpers), Section 5 (H helpers), Section 7 (template), Section 8 (booklet structure), Section 14 (cheat sheet), Section 15 (graph rendering) |
-| **PPTX** | [`PPTX_BUILDER_REFERENCE.md`](PPTX_BUILDER_REFERENCE.md) | Section 2 (C helpers), Section 3 (H helpers), Section 4 (template), Section 9 (cheat sheet), Section 10 (graph & diagram embedding) |
+| **DOCX** | [`DOCX_BUILDER_REFERENCE.md`](DOCX_BUILDER_REFERENCE.md) | Section 4 (C helpers), Section 5 (H helpers), Section 7 (template), Section 8 (booklet structure), Section 14 (cheat sheet), Section 15 (image embedding) |
+| **PPTX** | [`PPTX_BUILDER_REFERENCE.md`](PPTX_BUILDER_REFERENCE.md) | Section 2 (C helpers), Section 3 (H helpers), Section 4 (template), Section 9 (cheat sheet), Section 10 (E5 model), Section 11 (image embedding) |
+| **Graphs/Diagrams** | [`GRAPH_RENDERING.md`](GRAPH_RENDERING.md) | 🆕 Standalone spec API — graph/circuit/diagram JSON format, circuit layout modes, element catalog. Open BEFORE creating graph specs. |
 | **E5 PPTX** | Also read [`E5_MODEL_BIBLE.md`](E5_MODEL_BIBLE.md) | Pedagogical reference — mandatory before drafting any E5 slide content |
 
-**Image handling:** If the user requested open-source images, see `DOCX_BUILDER_REFERENCE.md` Section "Image download workflow" and verification loop. If the user requested graphs or diagrams, see `DOCX_BUILDER_REFERENCE.md` Section 15 (for DOCX) or `PPTX_BUILDER_REFERENCE.md` Section 10 (for PPTX). If the user requested YouTube videos (PPTX), see the video helpers in `PPTX_BUILDER_REFERENCE.md`.
+> **⛔ E5 GATE — STOP AND READ:** If the resource type is an E5 lesson deck, you MUST open and read [`E5_MODEL_BIBLE.md`](E5_MODEL_BIBLE.md) before writing ANY slide content. This is not optional. The file tells you what good content looks like for each phase, common failure modes, and the cross-phase quality gate. Do NOT proceed to Step 3 without confirming you've read it. If you skip this, your E5 deck will feel hollow — generic bullet points with phase labels, instead of genuine inquiry-driven learning.
+
+**Image handling:** If the user requested open-source images, see `DOCX_BUILDER_REFERENCE.md` Section "Image download workflow" and verification loop. If the user requested graphs or diagrams, see [`GRAPH_RENDERING.md`](GRAPH_RENDERING.md) for spec format and render commands. If the user requested YouTube videos (PPTX), see the video helpers in `PPTX_BUILDER_REFERENCE.md`.
 
 ### Step 4: Run the build
+
+> **📊 GRAPH CHECKLIST — did Q8 include rendered graphs?** Complete each item:
+> - [ ] Created `graphs/` subfolder in `content/<resource-name>/`
+> - [ ] Wrote JSON spec files for each graph/circuit/diagram
+> - [ ] Ran `python tools/render_graph.py --spec ... --out images/...` for each spec
+> - [ ] Verified images exist in `images/` with reasonable file sizes
+> - [ ] Content modules reference images via `C.imageFromFile()` (DOCX) or `C.imageSlide()` (PPTX)
+>
+> **If graphs were NOT requested in Q8, skip the checklist above.**
 
 **If graphs/diagrams were requested:** Render them first — create JSON spec files in `content/<resource-name>/graphs/` and run:
 ```powershell
@@ -248,5 +272,5 @@ Tell the user:
 | DOCX worksheet / booklet / assessment / lab / revision / activities | `AGENTS.md` + `INTERVIEW_DOCX.md` + `DOCX_BUILDER_REFERENCE.md` |
 | PPTX standard lesson / revision / assessment walkthrough / lab intro | `AGENTS.md` + `INTERVIEW_PPTX.md` + `PPTX_BUILDER_REFERENCE.md` |
 | PPTX E5 lesson | `AGENTS.md` + `INTERVIEW_PPTX.md` + `PPTX_BUILDER_REFERENCE.md` + `E5_MODEL_BIBLE.md` |
-| DOCX booklet + teacher edition | Above + `DOCX_BUILDER_REFERENCE.md` Section 9 |
+| DOCX booklet + teacher edition | Above + [`TEACHER_EDITION.md`](TEACHER_EDITION.md) |
 | PPTX with companion DOCX worksheet | Both interview files + both reference files |

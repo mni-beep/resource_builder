@@ -512,7 +512,8 @@
   <div class="options">
     <div class="option"><input type="radio" name="q8" id="q8-ascii" value="ASCII only"><label for="q8-ascii">ASCII diagrams only</label></div>
     <div class="option"><input type="radio" name="q8" id="q8-oss" value="Open-source images"><label for="q8-oss">Open-source images</label></div>
-    <div class="option"><input type="radio" name="q8" id="q8-both" value="Both"><label for="q8-both">Both</label></div>
+    <div class="option"><input type="radio" name="q8" id="q8-render" value="Rendered graphs"><label for="q8-render">📊 Rendered graphs/diagrams (matplotlib, schemdraw, svgwrite)</label></div>
+    <div class="option"><input type="radio" name="q8" id="q8-both" value="Both"><label for="q8-both">Both (images + rendered)</label></div>
     <div class="option"><input type="radio" name="q8" id="q8-none" value="None" checked><label for="q8-none">None — text and tables only</label></div>
   </div>
   <div class="sub-section hidden" id="sec-q8-sources">
@@ -957,11 +958,16 @@ function generatePrompt() {
   lines.push(`Author: ${v('q7-author')}`);
 
   // Q8
-  lines.push(`Images: ${qval('q8')}`);
-  if (qval('q8') === 'Open-source images' || qval('q8') === 'Both') {
+  const q8val2 = qval('q8');
+  lines.push(`Images: ${q8val2}`);
+  if (q8val2 === 'Open-source images' || q8val2 === 'Both') {
     const srcs = checkedIds('q8s-');
     if (srcs.length) lines.push(`  Sources: ${srcs.join(', ')}`);
     lines.push(`  Max images: ${v('q8s-count','4')}`);
+  }
+  if (q8val2 === 'Rendered graphs' || q8val2 === 'Both') {
+    lines.push('  📊 Generate graphs/diagrams via tools/render_graph.py (matplotlib, schemdraw, svgwrite)');
+    lines.push('  Store specs in content/<resource>/graphs/ folder');
   }
   if (v('q8-yt') === 'Yes') lines.push('YouTube videos: Yes — search and embed in Engage/Explore slides');
 

@@ -25,58 +25,23 @@
 
 ## Question 4: STRUCTURE (tailor to PPTX resource type)
 
-**For PPTX standard lesson decks:**
-- How many lessons does this cover? ___________
-- Approximate total slides: ___________ (typical: 8–15 per lesson)
-- Should each lesson start with a learning objectives slide? [ ] Yes  [ ] No
-- Should each lesson end with a summary slide? [ ] Yes  [ ] No
-- Should it have a title slide? [ ] Yes  [ ] No
+> **Agent note:** Only ask the questions for the type the user selected in Q1. Use the defaults in parentheses if the user can't specify.
+
+**For ALL PPTX types — ask these two universal questions first:**
+- Approximate total slides: ___________ (default: let the agent decide)
 - Slide format: [ ] Widescreen 16:9 (default)  [ ] Standard 4:3
 
-**For PPTX E5 lesson decks:**
-- How many lessons does this cover? ___________
-- Approximate total slides: ___________ (typical: 8–15 per lesson)
-- Should it have a title slide? [ ] Yes  [ ] No
-- Should each lesson start with a learning objectives slide? [ ] Yes  [ ] No
-- Should each lesson end with a summary slide? [ ] Yes  [ ] No
-- Slide format: [ ] Widescreen 16:9 (default)  [ ] Standard 4:3
+**Then ask ONLY the questions for the chosen type:**
 
-> | Phase | Colour | Icon | Typical slides | Purpose |
-> |---|---|---|---|---|
-> | Engage | Orange | 💡 | 1–2 | Hook, prior knowledge, curiosity |
-> | Explore | Teal | 🔍 | 1–2 | Hands-on investigation, inquiry |
-> | Explain | Blue | 📖 | 2–4 | Explicit teaching, formal definitions |
-> | Elaborate | Purple | 🔗 | 1–2 | Apply to new contexts, extend |
-> | Evaluate | Red | ✅ | 1–2 | Check understanding, reflect, assess |
+| Resource Type | Ask These Questions |
+|---|---|
+| **Standard lesson** | Number of lessons. Title/objectives/summary slides? (default: all yes). Visual style: Rich/Modern or Clean/Traditional? |
+| **E5 lesson** | Number of lessons. Standard or Extended depth? Slides per phase (defaults: 1/1/2/1/1). Companion worksheet? Visual style: Rich/Modern or Clean/Traditional? |
+| **Revision deck** | Number of topics. Section dividers? Practice questions + how many per topic? |
+| **Assessment walkthrough** | Number of questions. Answers in speaker notes or separate slides? Worked solutions? |
+| **Lab/practical intro** | Slides count. Safety and checklist slides? |
 
-**E5-specific follow-ups:**
-- Slides per phase: Engage __ Explore __ Explain __ Elaborate __ Evaluate __ (defaults: 1/1/2/1/1 for Standard, 1/1/5/1/1 for Extended)
-- Should each phase have its own divider slide? [ ] Yes (recommended)  [ ] No
-
-**E5 lesson depth — how much content per phase?**
-- [ ] **Standard E5** (6–8 slides total) — one slide per phase: Learning Intention, Engage, Explore, Explain, Elaborate, Evaluate. Clean, concise, no extras.
-- [ ] **Extended E5** (12–20 slides total) — core vocabulary plus extra **theory detail slides**, **worked examples**, **now-you-try mirrored problems**, **comparison tables**, and **data-collection tables**, all integrated into their respective E5 phases (Explain extras go inside Explain, Explore tables inside Explore, etc.). Use this when you want deeper concept coverage.
-
-> **⚠️ CRITICAL: If Extended E5 is chosen, ALL extra content slides MUST be interleaved into the E5 phase sequence — NEVER appended at the end.** The slide order follows the E5 arc: Title → Objectives → Learning Intention → Engage → Explore (with any data table) → Explain (core vocab + any extra theory/worked-examples/now-you-try/comparison) → Elaborate → Evaluate → Summary.
-
-> **🔧 E5 Continuation Slides for multi-slide phases:** When a phase has more than 1 slide (e.g. Engage 2, Explore 2, Explain 2), every slide AFTER the first must carry the same E5 chrome (skill label, phase button, SM bar) so students always know which phase they're in. Use `C.e5ContinuationSlide(skillLabel, phaseName, smText, title, bullets, opts)` for these follow-on slides. It supports:
-> - **Bullet mode:** Pass `bullets` as an array (like `C.contentSlide()`)
-> - **Table mode:** Pass `null` for bullets and include `opts.table = { headers[], rows[][], colWidths[]? }`
-> - **Icons & shadows:** Pass `opts.iconName` (e.g. `"bulb"`, `"search"`) for a pre-rendered SVG icon beside the heading, and the body gets a subtle card shadow automatically
-> - **Phase-aware colours:** The phase button and SM bar automatically match the phase (orange=Engage, teal=Explore, blue=Explain, purple=Elaborate, red=Evaluate)
->
-> **Never use `C.contentSlide()` or `C.tableSlide()` for the second+ slide in a multi-slide phase** — these lack E5 chrome and will look disconnected from the phase.
-
-**For PPTX revision decks:**
-- How many topics to cover? ___________
-- Use section divider slides between topics? [ ] Yes  [ ] No
-- Include practice questions? [ ] Yes  [ ] No
-- If yes, how many per topic? ___________
-
-**For PPTX assessment walkthroughs:**
-- How many questions total? ___________
-- Show answers on separate slides or in speaker notes? [ ] Speaker notes (recommended)  [ ] Separate slides
-- Include worked solutions? [ ] Yes  [ ] No
+> **After collecting the type-specific answers, proceed to Q2 in AGENTS.md.**
 
 ---
 

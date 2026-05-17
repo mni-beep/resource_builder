@@ -15,6 +15,38 @@
 
 Every content module exports `function(C, H) → array` of slide definitions. Use `C.*` for all slide types. Use `H.*` for table cell styling.
 
+### 🚨 CRITICAL: Spread array-returning helpers
+
+Some `C.*` helpers return arrays of slide definitions, not single objects. You MUST spread them with `...` when pushing into your slides array, or the PPTX will silently corrupt.
+
+| Helper | Usage |
+|---|---|
+| `C.e5LessonPlan(skillLabel, plan)` | `slides.push(...C.e5LessonPlan(...))` |
+
+> **Rule of thumb:** If a helper builds multiple slides (like `e5LessonPlan` which creates 6), it returns an array. Spread it.
+
+### 🧠 80/20 Cheat Card — covers 90% of slide needs
+
+```js
+module.exports = function myDeck(C, H) {
+  return [
+    C.titleSlide("Presentation Title", "Subtitle", "Author"),
+    C.objectivesSlide("Learning Objectives", ["Obj 1", "Obj 2", "Obj 3"]),
+    C.contentSlide("Topic Heading", ["Bullet 1", "Bullet 2", "Bullet 3"], { hint: "Optional hint", notes: "Teacher notes" }),
+    C.twoColumnSlide("Comparison", ["Left 1", "Left 2"], ["Right 1", "Right 2"]),
+    C.imageSlide("Diagram", "images/diagram.png", "Figure 1: Caption"),
+    C.workedExampleSlide("Worked Example", ["Step 1: ...", "Step 2: ..."], { question: "Question text" }),
+    C.nowYouTrySlide("Now You Try", "Question?", ["Answer 1", "Answer 2"]),
+    C.mcQuestionSlide(1, "MC stem?", ["A", "B", "C", "D"], "Hint?", "Correct answer"),
+    C.checklistSlide("Success Criteria", ["Item 1", "Item 2"]),
+    C.bigIdeaSlide("Key takeaway", "— Subtitle"),
+    C.summarySlide("What We've Learned", ["Takeaway 1", "Takeaway 2"]),
+    // For E5 lessons:
+    ...C.e5LessonPlan("Skill Label", { intention: "...", successMeasures: {...}, engage: {...}, explore: {...}, explain: {...}, elaborate: {...}, evaluate: {...} }),
+  ];
+};
+```
+
 ---
 
 ## 1. Architecture
@@ -55,9 +87,10 @@ build-pptx.js
 
 | Export | Type | Description |
 |---|---|---|
-| `C.COLOURS` | `object` | `{ primary, accent, warning, greenLine, greyText, darkGrey, greenWE, greenBg, white, black }` |
+| `C.COLOURS` | `object` | Extended palette — `{ primary, accent, warning, greenLine, greyText, darkGrey, greenWE, greenBg, white, black }` plus Claude-rich colours: `{ navy, navyLight, cyan, cyanLight, amber, amberLight, green, greenBg2, red, redLight, muted, paleBg, rule }` plus E5 phase colours: `{ e5Engage, e5EngageBg, e5Explore, e5ExploreBg, e5Explain, e5ExplainBg, e5Elaborate, e5ElaborateBg, e5Evaluate, e5EvaluateBg }` |
 | `C.SLIDE` | `object` | `{ widescreen: {w, h}, standard: {w, h} }` — dimensions in inches |
 | `C.FONT` | `object` | `{ body: "Calibri", heading: "Calibri", mono: "Consolas" }` |
+| `C.CHROME` | `object` | Slide chrome config: `{ cornerMark, lessonChip, footer }` — see Section 2.8 |
 
 ### 2.2 Slide Definition Helpers
 
@@ -176,6 +209,80 @@ C.videoSlide("Lab Demonstration",
   "./content/videos/lab-setup.mp4",
   "Demo: Setting up the circuit"
 )
+```
+
+---
+
+### 2.8 Chrome Configuration (`C.CHROME`)
+
+Slides can carry optional "chrome" — corner marks, lesson chips, and footers — for visual consistency across a deck.
+
+```js
+C.CHROME = {
+  cornerMark: { color: "0891B2", size: 0.15, x: 0.3, y: 0.15 },  // top-left cyan corner mark
+  lessonChip: { color: "2B579A", textColor: "FFFFFF", fontSize: 10 },  // lesson number chip
+  footer:     { color: "64748B", fontSize: 9 },  // bottom-centre footer text
+};
+```
+
+Set `def.chrome` on any slide definition to activate chrome rendering:
+
+```js
+const slide = C.contentSlide("Title", ["bullet"]);
+slide.chrome = { cornerMark: true, lessonChip: "L4", footer: "Unit 1 · Electronics" };
+```
+
+### 2.9 Charts, Shapes & Audio Slides
+
+Native pptxgenjs chart, shape, and audio embedding — for data visualisation, annotated diagrams, and narrated slides.
+
+```js
+// Chart slide — bar, line, pie, scatter charts via pptxgenjs
+C.chartSlide("Test Scores", "bar", [
+  { name: "Topic 1", labels: ["Q1","Q2","Q3"], values: [8,12,10] },
+  { name: "Topic 2", labels: ["Q1","Q2","Q3"], values: [6,9,14] },
+], { showLegend: true, catAxisLabel: "Question", valAxisLabel: "Score", notes: "..." })
+
+// Shape slide — freeform shapes with pptxgenjs
+C.shapeSlide("Annotated Diagram", [
+  { name: "rect", options: { x: 2, y: 2, w: 4, h: 3, fill: { color: "E8F0FE" } } },
+  { name: "ellipse", options: { x: 1, y: 1, w: 2, h: 2, fill: { color: "FFE0E0" } } },
+], { notes: "Key shapes labelled" })
+
+// Audio slide — embedded audio with optional cover image
+C.audioSlide("Narrated Instructions", "./content/audio/instructions.mp3",
+  { cover: "./content/images/audio-icon.png", position: { x: 2, y: 3, w: 6, h: 1.5 } })
+```
+
+### 2.10 Hyperlinks, Masters, Backgrounds & Sections
+
+```js
+// Hyperlink — create clickable links for use in slide text
+C.hyperlink("https://phet.colorado.edu", { tooltip: "Open simulation", isSlideLink: false })
+C.hyperlink("slide-5", { tooltip: "Jump to summary", isSlideLink: true })
+
+// Slide Master — define a custom master slide with background and objects
+C.slideMaster({
+  title: "Custom Master",
+  background: { color: "F4F7FB" },
+  objects: [{ type: "rect", options: { x: 0, y: 0, w: "100%", h: 0.5, fill: { color: "2B579A" } } }],
+  slideNumber: C.slideNumberConfig({ x: "95%", y: "95%", color: "808080", fontSize: 10 }),
+})
+
+// Background — define a slide background (colour, gradient, or image)
+C.background({ color: "2B579A" })                     // solid colour
+C.background({ path: "./images/texture.png" })          // image fill
+C.background({ data: "image/png;base64,..." })          // base64 data URI
+C.background({ color: "2B579A", transparency: 50 })    // 50% transparent
+
+// Section — group slides into named sections (visible in PowerPoint's slide sorter)
+C.section("Topic 1: Motion")
+
+// Slide Number Config — control appearance of auto-generated slide numbers
+C.slideNumberConfig({ x: "50%", y: "95%", color: "808080", fontSize: 10 })
+
+// Line Properties — reusable line/arrow styling for shapes and connectors
+C.lineProps({ color: "2B579A", width: 2, dashType: "solid", beginArrowType: null, endArrowType: "arrow" })
 ```
 
 ---
@@ -461,6 +568,7 @@ C.e5ExploreSlide(skillLabel, heading, prompts[], imagePath?, smText, { notes?, m
 C.e5ExplainSlide(skillLabel, heading, contentBlocks[], calloutText?, smText, { notes?, imagePath? })
 C.e5ElaborateSlide(skillLabel, heading, instruction, activityItems[], smText, { notes? })
 C.e5EvaluateSlide(skillLabel, heading, assessmentLink, smText, { notes?, rubricItems[] })
+C.e5ContinuationSlide(skillLabel, phaseName, smText, title, bullets?, opts?)  // extra slides within same phase
 C.e5LessonPlan(skillLabel, plan)   // convenience: bundles all phases
 
 // Table cell helpers (H)
@@ -481,6 +589,19 @@ C.resolveImage(path)
 // Video / YouTube helpers
 C.videoSlide(title, videoSource, caption?, { notes?, autoPlay?, maxHeight? })
 C.downloadYouTube(url, outputDir?, { maxHeight?, timeout? })
+
+// Charts, Shapes & Audio
+C.chartSlide(title, chartType, data[], { showLegend?, showTitle?, catAxisLabel?, valAxisLabel?, notes? })
+C.shapeSlide(title, shapes[], { notes? })
+C.audioSlide(title, audioPath, { cover?, notes?, position? })
+
+// Hyperlinks, Masters & Layout
+C.hyperlink(url, { tooltip?, isSlideLink? })
+C.slideMaster({ title?, objects[], background?, slideNumber? })
+C.background({ color?, path?, data?, transparency? })
+C.section("Section Name")
+C.slideNumberConfig({ x?, y?, color?, fontSize? })
+C.lineProps({ color?, width?, dashType?, beginArrowType?, endArrowType? })
 
 // Icon system & chrome
 C.initIcons()                  // async — pre-renders icon set
@@ -571,6 +692,39 @@ C.e5ElaborateSlide(skillLabel, heading, instruction, activityItems[], smText, { 
 C.e5EvaluateSlide(skillLabel, heading, assessmentLink, smText, { notes?, rubricItems[] })
 ```
 
+**`C.e5ContinuationSlide(skillLabel, phaseName, smText, title, bullets?, opts?)`**
+
+Creates an additional slide within a phase that carries the same E5 chrome (skill label, phase button, SM bar). Use for multi-slide phases — e.g., a second Engage slide or a second Explain slide.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `notes` | `string` | `""` | Speaker notes |
+| `hint` | `string` | `""` | Italic grey hint text below heading |
+| `iconName` | `string` | `""` | Pre-rendered icon name from `C.icon()` catalog (e.g., `"check"`, `"bulb"`, `"search"`) |
+| `table` | `object` | `null` | `{ headers[], rows[][], colWidths[]? }` — render a table instead of bullets |
+
+```js
+// Extra Explain slide with an icon and hint
+C.e5ContinuationSlide(
+  "Skill 1: Defining Classification",  // skillLabel
+  "Explain",                            // phaseName
+  "I understand the terms used",        // smText
+  "More Key Vocabulary",                // title
+  ["Kingdom: The highest taxonomic rank.", "Phylum: A group of related classes."],
+  { hint: "These terms will appear in your assessment.", iconName: "pencil" }
+)
+
+// Continuation slide with a table instead of bullets
+C.e5ContinuationSlide(
+  "Skill 3: Circuit Analysis",
+  "Explain",
+  "I can calculate equivalent resistance",
+  "Resistor Colour Codes",
+  null,   // no bullets — table mode
+  { table: { headers: ["Colour", "Digit", "Multiplier"], rows: [["Black", "0", "×1"], ["Brown", "1", "×10"]] } }
+)
+```
+
 ### 10.4 E5 Convenience Builder
 
 `C.e5LessonPlan(skillLabel, plan)` bundles a learning intention slide + all 5 phases:
@@ -642,15 +796,55 @@ Produces 6 slides: 1 Learning Intention + 1 per phase.
 
 ---
 
-## 11. Graph & Diagram Embedding (PPTX)
+## 11. Graph & Diagram Embedding
 
-### 11.1 Overview
+> **📊 Image generation is handled by a separate pipeline.** See [`GRAPH_RENDERING.md`](GRAPH_RENDERING.md) for the complete spec API — graph JSON format, circuit layout modes (series/parallel/manual), element catalog, VCAA compliance defaults, and the `tools/render_graph.py` CLI.
 
-The PPTX pipeline shares the same graph rendering tool as DOCX: `tools/render_graph.py`. Rendered images (PNG for graphs, SVG for circuits/diagrams) are embedded into slides via `C.imageSlide()`.
+### Workflow
 
-The full spec format and all renderer options are documented in `DOCX_BUILDER_REFERENCE.md` Section 15 — read that first. This section covers PPTX-specific embedding patterns.
+```powershell
+# 1. Render the image FIRST
+python tools/render_graph.py --spec content/my-lesson/graphs/iv-curve.json --out images/iv-curve.png
+# 2. Embed in slide definitions, then build
+node build-pptx.js
+```
 
-### 11.2 Workflow
+### Standalone image slide
+
+```js
+C.imageSlide("I-V Characteristic", "images/iv-curve.png",
+  "Figure 1: Current is proportional to voltage (R = 22 Ω).",
+  { notes: "gradient = 1/R" }
+)
+```
+
+### Content slide with embedded image
+
+```js
+C.contentSlide("Photoelectric Effect", [
+  "Below the threshold frequency f₀, no electrons are emitted.",
+], {
+  image: "images/photoelectric-graph.png",
+  imageSize: { x: 5.5, y: 1.8, w: 4.5, h: 3.2 },
+  notes: "f₀ ≈ 5.5 × 10¹⁴ Hz"
+})
+```
+
+### Specs Location
+
+Store graph specs alongside content modules:
+
+```
+content/my-lesson/
+├── 01-title.js
+├── graphs/
+│   └── iv-curve.json
+```
+
+---
+
+> **End of Reference.** Use this alongside `AGENTS.md` and `DOCX_BUILDER_REFERENCE.md` for the full picture.
+
 
 ```powershell
 # 1. Render the graph/circuit/diagram
